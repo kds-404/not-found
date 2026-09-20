@@ -396,10 +396,10 @@ const META = {
     note:'発見 16:42 ／ 回収済', video:'', poster:'' },
   '002': { tag:'#002', sub:'現象記録', title:'2階図書館',
     body:'本棚でこのような現象が複数件目撃されている。',
-    note:'確認 14:18 ／ 目撃者：7名', video:'media/002.mp4', poster:'' },
+    note:'確認 14:18 ／ 目撃者：7名', video:'media/002.mp4', poster:'media/002p.jpg' },
   '003': { tag:'#003', sub:'現象記録', title:'5階エレベーターホール',
     body:'地震のような音と共に物体が動き出したという証言がある。',
-    note:'発見 10:46 ／ 撮影：某学生', video:'media/003.mp4', poster:'' },
+    note:'発見 10:46 ／ 撮影：某学生', video:'media/003.mp4', poster:'media/003p.jpg' },
   '004': { tag:'#004', sub:'遺失物', title:'某職員',
     body:'某職員によると、授業で使用するUSBが盗まれたとのこと。',
     note:'証言 12:56 ／ 離席中に紛失', video:'', poster:'' },
@@ -558,7 +558,7 @@ LOGO_POS.forEach((p,i) => {
 });
 
 
-/* --- 大きな桑沢 / 桑澤 / 小さな走り書き --- */
+/* --- 大きな桑沢 / 桑澤 / --- */
 addFloat('kuwa1', mk('div','big','<i>桑</i><i>沢</i>'), { x:1545, y:225, r:22, jit:40, rj:5, amp:1.3 });
 addFloat('kuwa2', mk('div','kuwa2','<b>桑</b><b>澤</b><small>くわさわ</small>'), { x:1315, y:1445, r:-2, jit:40, rj:5 });
 [['くわさわ',1285,533,-24],['はくちゅうむ',177,792,-58],['ざわ',1838,1440,-22],['さわ',560,1170,20]].forEach((s,i) => {
@@ -997,16 +997,44 @@ function selectItem(key, o={}){
 const dossierEl = $('#dossier'), dMedia = $('#dMedia');
 let dosToken = 0, dosKey = null, dosCanvas = null, dosMirror = false;
 function setActive(key){ floaters.forEach(f => f.el.classList.remove('active')); if(key && byKey[key]) byKey[key].el.classList.add('active'); }
+// ⭕ 修正版 mountMedia 関数
 function mountMedia(key, m){
   dMedia.innerHTML = ''; dosCanvas = null; dosMirror = false;
   const src = m.video || (key === 'cam1' ? CONFIG.cameraVideo : '');
+  
   if(src){
-    const v = mk('video'); v.src = src; v.muted = true; v.setAttribute('muted',''); v.loop = true; v.autoplay = true; v.playsInline = true; v.setAttribute('playsinline','');
+    const v = mk('video'); 
+    v.src = src; 
+    v.muted = true; 
+    v.setAttribute('muted',''); 
+    v.loop = true; 
+    v.autoplay = true; 
+    v.playsInline = true; 
+    v.setAttribute('playsinline','');
+    v.setAttribute('webkit-playsinline',''); // iOS互換用
+
     if(m.poster) v.poster = m.poster;
-    dMedia.appendChild(v); v.play().catch(() => {});
+    dMedia.appendChild(v);
+
+    // ⭕ 動画の読み込み準備ができたら再再生を試みる
+    v.addEventListener('loadeddata', () => {
+      v.play().catch(() => {});
+    });
+
+    // ⭕ DOM追加後、一瞬（50ms）遅らせて確実に play をキック
+    setTimeout(() => {
+      v.load();
+      v.play().catch(err => console.log('Video play deferred:', err));
+    }, 50);
+
     dMedia.appendChild(mk('span','dcap', key === 'cam1' ? 'CAM01 LIVE' : 'RECORD '+m.tag));
   }else{
-    const c = mk('canvas'); c.width = 320; c.height = 180; dMedia.appendChild(c); dosCanvas = c; dosMirror = key === 'cam1';
+    const c = mk('canvas'); 
+    c.width = 320; 
+    c.height = 180; 
+    dMedia.appendChild(c); 
+    dosCanvas = c; 
+    dosMirror = key === 'cam1';
     dMedia.appendChild(mk('span','dcap', dosMirror ? 'CAM01 LIVE' : 'NO SIGNAL'));
   }
   dMedia.appendChild(mk('i','drec'));
