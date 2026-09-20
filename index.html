@@ -1,191 +1,1116 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>全方向探索 × QR連動アート(test)</title>
-  <!-- Panzoomライブラリ (CDN) -->
-  <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      background-color: #0d0d0d;
-      font-family: monospace;
-      user-select: none;
-      touch-action: none; /* スマホのバウンススクロール防止 */
-    }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#262626">
+<title>白昼夢現象調査委員会</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Shippori+Mincho:wght@400;500;800&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   捜査ボード
+   ===================================================================== */
+*{box-sizing:border-box}
+:root{
+  --k:1.656; /* JS が上書き: イラレ座標(1932px) → ボード座標 の倍率 */
+  --serif:"Shippori Mincho","Yu Mincho","YuMincho","Hiragino Mincho ProN","Noto Serif JP","MS PMincho",serif;
+  --mono:"Share Tech Mono","SF Mono",Menlo,Consolas,monospace;
+  --sans:"Gill Sans","Gill Sans MT","Helvetica Neue",Arial,sans-serif;
+  --red:#ff2a2a;
+  --paper:#b3b3b3;
+}
+html,body{margin:0;height:100%;background:#262626;overflow:hidden;overscroll-behavior:none;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;
+  font-family:var(--serif);color:#fff}
+#app{position:fixed;inset:0;overflow:hidden}
+#app.shake{animation:shake .55s steps(1) 1}
+@keyframes shake{
+  0%{transform:translate(0,0)}10%{transform:translate(-14px,9px)}20%{transform:translate(12px,-10px)}
+  30%{transform:translate(-9px,-7px)}40%{transform:translate(8px,8px)}50%{transform:translate(-6px,4px)}
+  60%{transform:translate(5px,-4px)}75%{transform:translate(-3px,2px)}90%{transform:translate(2px,-1px)}100%{transform:translate(0,0)}}
 
-    /* 巨大キャンバス (3000px * 3000px) */
-    #world {
-      width: 3000px;
-      height: 3000px;
-      background-image: radial-gradient(#2a2a2a 1px, transparent 1px);
-      background-size: 50px 50px;
-      position: relative;
-    }
+/* ---------- 盤面 ---------- */
+#viewport{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:grab;background:#2a2a2a}
+#viewport.grabbing{cursor:grabbing}
+#board{position:absolute;left:0;top:0;transform-origin:0 0;background-color:#333;
+  background-image:
+    radial-gradient(circle at 26% 20%,rgba(190,180,110,.07),transparent 22%),
+    radial-gradient(circle at 76% 64%,rgba(190,180,110,.055),transparent 26%),
+    radial-gradient(circle at 40% 86%,rgba(150,160,210,.05),transparent 24%),
+    linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px),
+    radial-gradient(ellipse at 50% 50%,#3b3b3b 0,#333 48%,#282828 100%);
+  background-size:100% 100%,100% 100%,100% 100%,160px 160px,160px 160px,100% 100%}
+#bgsvg,#strings{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+#strings{z-index:6}
+#layer{position:absolute;inset:0}
 
-    /* マップ上に散らばる作品スポット */
-    .spot {
-      position: absolute;
-      width: 280px;
-      padding: 15px;
-      background: #1a1a1a;
-      border: 2px solid #00ff00;
-      color: #00ff00;
-      box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
-      border-radius: 4px;
-      cursor: pointer;
-    }
+/* ふよふよ要素の共通 */
+.fl{position:absolute;left:0;top:0;transform-origin:50% 50%}
+.txt{font-family:var(--serif);font-weight:400;color:#fff;white-space:nowrap;line-height:1.15;letter-spacing:.05em;z-index:3}
+.txt b{font-weight:800}
+.txt.bold{font-weight:800;letter-spacing:.03em}
+.txt .up{font-size:1.16em;font-weight:800}
 
-    .spot h3 { margin: 0 0 10px 0; font-size: 16px; }
+/* 白昼夢ロゴ（ここは書き出したロゴ画像に差し替え可: CONFIG.logoImage） */
+.lgw{z-index:1}
+.logo{position:relative;display:block;font:800 calc(96px*var(--k))/1 var(--serif);color:#fff;letter-spacing:-.05em;white-space:nowrap;padding:.06em .1em .02em}
+.logo img{display:block;height:calc(120px*var(--k));width:auto}
+.logo i{display:inline-block;font-style:normal;transform-origin:50% 60%}
+.logo i:nth-of-type(1){transform:scale(1.02,1.16) skewX(-3deg)}
+.logo i:nth-of-type(2){transform:scale(1.06,.9) skewX(7deg) translateY(.04em)}
+.logo i:nth-of-type(3){transform:scale(.96,1.08) skewX(-9deg) translateY(-.02em);position:relative}
+.logo i:nth-of-type(3)::after{content:'夢';position:absolute;left:0;top:0;transform:scaleY(-1) translateY(-6%);opacity:.32}
+.logo sup{position:absolute;right:.02em;top:-.02em;font:500 .3em/1 var(--serif);letter-spacing:.08em}
+.logo.glitch{animation:lgl .22s steps(2) 1}
+@keyframes lgl{
+  0%{text-shadow:5px 0 #f0f,-5px 0 #0ff;transform:translateX(-8px) skewX(6deg)}
+  50%{text-shadow:-6px 0 #f0f,6px 0 #0ff;transform:translateX(9px) skewX(-6deg);opacity:.7}
+  100%{text-shadow:none;transform:none}}
+.toha{position:absolute;left:100%;bottom:.05em;margin-left:.12em;font:400 calc(40px*var(--k))/1 var(--serif);letter-spacing:.06em;color:#fff}
 
-    /* モーダル（動画ポップアップ） */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: rgba(0, 0, 0, 0.85);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-    }
-    .modal-content {
-      position: relative;
-      width: 90%;
-      max-width: 500px;
-      background: #000;
-      border: 2px solid #00ff00;
-      padding: 20px;
-      color: #00ff00;
-    }
-    .modal-close {
-      position: absolute;
-      top: 10px; right: 15px;
-      color: #00ff00;
-      font-size: 24px;
-      cursor: pointer;
-    }
-    video { width: 100%; display: block; margin-top: 10px; }
-  </style>
+/* 大きな「桑沢」「桑澤」 */
+.big{font:800 calc(150px*var(--k))/1 var(--serif);color:#fff;white-space:nowrap;letter-spacing:-.08em;z-index:1}
+.big i{display:inline-block;font-style:normal}
+.big i:nth-child(1){transform:translate(-.04em,-.1em) rotate(-9deg) scale(1.04,.96)}
+.big i:nth-child(2){transform:translate(.04em,.12em) rotate(12deg) skewX(-8deg)}
+.kuwa2{position:relative;width:calc(210px*var(--k));height:calc(250px*var(--k));z-index:1}
+.kuwa2 b{position:absolute;font:800 calc(112px*var(--k))/1 var(--serif);color:#fff}
+.kuwa2 b:nth-of-type(1){left:0;top:0;transform:rotate(-6deg)}
+.kuwa2 b:nth-of-type(2){left:calc(62px*var(--k));top:calc(112px*var(--k));transform:rotate(5deg) skewX(-6deg)}
+.kuwa2 small{position:absolute;left:calc(-42px*var(--k));top:calc(78px*var(--k));font:400 calc(26px*var(--k))/1.3 var(--serif);writing-mode:vertical-rl;letter-spacing:.35em;transform:rotate(-14deg);opacity:.9}
+.scrib{font:italic 400 calc(24px*var(--k))/1.2 var(--serif);color:#fff;writing-mode:vertical-rl;letter-spacing:.35em;opacity:.8;white-space:nowrap;z-index:2}
+
+/* 証拠カード（#001…） */
+.card{width:calc(112px*var(--k));height:calc(158px*var(--k));background:var(--paper);box-shadow:0 8px 22px rgba(0,0,0,.42);cursor:pointer;z-index:2}
+.card .lab{position:absolute;left:calc(6px*var(--k));top:calc(4px*var(--k));font:500 calc(27px*var(--k))/1.1 var(--serif);color:#0d0d0d;z-index:2;white-space:nowrap}
+.card.victim .lab{left:calc(-14px*var(--k));top:calc(10px*var(--k))}
+.card .shp{position:absolute;z-index:1}
+.card .shp svg{display:block;width:100%;height:100%;overflow:visible}
+.committee{cursor:pointer;z-index:2;width:calc(196px*var(--k));height:calc(202px*var(--k))}
+.committee .sq{position:absolute;inset:0;background:#f00;box-shadow:0 8px 26px rgba(0,0,0,.4)}
+.committee .ct{position:absolute;left:calc(-38px*var(--k));top:calc(-46px*var(--k));font:800 calc(24px*var(--k))/1.35 var(--serif);color:#fff;white-space:nowrap;letter-spacing:.03em}
+.committee .ct span{display:block;padding-left:calc(24px*var(--k))}
+.fl.active{filter:drop-shadow(0 0 0 transparent);animation:actv 1.3s ease-in-out infinite}
+.card.active::after,.cam.active::after,.committee.active::after{content:'';position:absolute;inset:calc(-14px*var(--k));border:3px solid var(--red);pointer-events:none;animation:ring 1.3s ease-in-out infinite}
+@keyframes ring{0%,100%{opacity:.95;transform:scale(1)}50%{opacity:.25;transform:scale(1.06)}}
+
+/* 監視カメラ */
+.cam{width:calc(317px*var(--k));height:calc(210px*var(--k));background:#1a1464;overflow:visible;cursor:pointer;z-index:2}
+.cam .scr{position:absolute;inset:0;overflow:hidden;isolation:isolate;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.cam canvas,.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.15) brightness(1.05)}
+.cam video{opacity:0;transition:opacity .4s}
+.cam video.on{opacity:1}
+.cam .tint{position:absolute;inset:0;background:#1c1478;mix-blend-mode:color;opacity:.9}
+.cam .scan{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.24) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
+.cam .roll{position:absolute;left:0;right:0;height:22%;top:-25%;background:linear-gradient(transparent,rgba(255,255,255,.1),transparent);animation:roll 5.5s linear infinite}
+@keyframes roll{to{top:110%}}
+.cam .lbl{position:absolute;left:calc(14px*var(--k));top:calc(18px*var(--k));font:500 calc(26px*var(--k))/1 var(--serif);color:#fff;letter-spacing:.06em;text-shadow:0 0 6px rgba(0,0,0,.7)}
+.cam .cid{position:absolute;left:calc(22px*var(--k));bottom:calc(14px*var(--k));font:400 calc(21px*var(--k))/1 var(--sans);color:#fff;letter-spacing:.06em;text-shadow:0 0 5px rgba(0,0,0,.7)}
+.cam .ts{position:absolute;right:calc(18px*var(--k));bottom:calc(14px*var(--k));font:400 calc(16px*var(--k))/1 var(--sans);color:#fff;letter-spacing:.04em;text-shadow:0 0 5px rgba(0,0,0,.7)}
+.cam .rec{position:absolute;right:calc(14px*var(--k));top:calc(14px*var(--k));width:calc(34px*var(--k));height:calc(34px*var(--k));border-radius:50%;background:#ff2229;animation:recb 1.2s steps(1) infinite}
+@keyframes recb{0%,60%{opacity:1}61%,100%{opacity:.15}}
+
+/* スタンプ */
+.stamp{z-index:4;border:calc(4px*var(--k)) solid var(--red);color:var(--red);font:800 calc(30px*var(--k))/1 var(--serif);letter-spacing:.2em;padding:.25em .5em .25em .7em;opacity:.5;white-space:nowrap;mix-blend-mode:screen}
+.stamp small{display:block;font:400 .4em/1.2 var(--mono);letter-spacing:.22em;margin-top:.3em}
+
+/* ---------- 画面全体のエフェクト ---------- */
+.fx{position:absolute;inset:0;pointer-events:none}
+#fxGrain{z-index:10;opacity:.5;background-size:160px 160px;animation:grain .9s steps(1) infinite}
+@keyframes grain{0%{background-position:0 0}20%{background-position:-40px 30px}40%{background-position:30px -50px}60%{background-position:-20px -10px}80%{background-position:50px 40px}100%{background-position:0 0}}
+#fxScan{z-index:11;opacity:.45;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 4px)}
+#fxScan::after{content:'';position:absolute;left:0;right:0;height:18%;top:-20%;background:linear-gradient(transparent,rgba(255,255,255,.035),transparent);animation:roll 9s linear infinite}
+#fxVig{z-index:12;background:radial-gradient(ellipse at center,transparent 52%,rgba(0,0,0,.6) 100%)}
+#fxFlick{z-index:13;background:#fff;mix-blend-mode:soft-light;opacity:0;animation:flick 7s steps(1) infinite}
+@keyframes flick{0%,100%{opacity:0}9%{opacity:.07}9.6%{opacity:0}10.2%{opacity:.1}10.6%{opacity:0}47%{opacity:.05}47.4%{opacity:0}71%{opacity:.09}71.3%{opacity:0}71.8%{opacity:.04}72.3%{opacity:0}}
+
+/* ---------- HUD ---------- */
+#hud{position:absolute;inset:0;z-index:20;pointer-events:none;opacity:0;transition:opacity 1.4s}
+body.ready #hud{opacity:1}
+#hudTitle{position:absolute;left:max(14px,env(safe-area-inset-left));top:max(12px,env(safe-area-inset-top));font:500 11px/1.6 var(--serif);color:rgba(255,255,255,.72);letter-spacing:.16em;text-shadow:0 1px 4px rgba(0,0,0,.8)}
+#hudTitle b{display:block;font-size:13px;font-weight:800;letter-spacing:.12em}
+#hudBtns{position:absolute;left:max(14px,env(safe-area-inset-left));bottom:max(14px,env(safe-area-inset-bottom));display:flex;gap:8px;align-items:flex-end;pointer-events:auto}
+#hudCoord{font:11px/1 var(--mono);color:rgba(255,255,255,.5);letter-spacing:.06em;margin-right:6px;align-self:center;text-shadow:0 1px 3px #000}
+.hb{min-width:40px;height:40px;padding:0 10px;border:1px solid rgba(255,255,255,.4);background:rgba(20,20,20,.6);color:#fff;font:500 13px/1 var(--serif);letter-spacing:.08em;cursor:pointer;border-radius:0}
+.hb:hover{background:rgba(70,70,70,.8)}
+.hb:focus-visible,.dclose:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#index{position:absolute;left:max(14px,env(safe-area-inset-left));bottom:calc(max(14px,env(safe-area-inset-bottom)) + 52px);display:none;flex-wrap:wrap;gap:6px;max-width:min(340px,calc(100vw - 28px));pointer-events:auto}
+#index.open{display:flex}
+#index .hb{min-width:0;height:32px;font-size:12px;padding:0 9px}
+#hint{position:absolute;left:0;right:0;bottom:calc(max(18px,env(safe-area-inset-bottom)) + 58px);text-align:center;font:400 12px/1.7 var(--serif);letter-spacing:.14em;color:rgba(255,255,255,.75);text-shadow:0 1px 6px #000;opacity:0;transition:opacity 1.2s}
+#hint.show{opacity:1}
+@media (max-width:720px),(max-aspect-ratio:1/1){ body.dos-open #hudBtns,body.dos-open #index,body.dos-open #hint{display:none} }
+
+/* ---------- 手がかり詳細（ふよふよポップアップ） ---------- */
+#dossier{position:fixed;z-index:30;right:max(20px,env(safe-area-inset-right));bottom:max(20px,env(safe-area-inset-bottom));width:min(430px,calc(100vw - 24px));pointer-events:none}
+#dossier.open{animation:dosIn .8s cubic-bezier(.2,1.5,.35,1) both}
+#dossier.closing{animation:dosOut .36s ease-in both}
+@keyframes dosIn{0%{opacity:0;transform:translateY(60px) scale(.35) rotate(-9deg)}100%{opacity:1;transform:none}}
+@keyframes dosOut{0%{opacity:1}100%{opacity:0;transform:translateY(30px) scale(.8) rotate(4deg)}}
+.dcard{position:relative;background:var(--paper);color:#0d0d0d;padding:22px 20px 20px;box-shadow:0 22px 60px rgba(0,0,0,.65);max-height:calc(100vh - 48px);overflow:auto;pointer-events:auto;animation:fuwa 6.5s ease-in-out infinite alternate;-webkit-user-select:text;user-select:text}
+@keyframes fuwa{0%{transform:translate3d(0,0,0) rotate(-1.4deg)}50%{transform:translate3d(7px,-11px,0) rotate(.9deg)}100%{transform:translate3d(-6px,4px,0) rotate(-.5deg)}}
+.dpin{position:absolute;left:50%;top:-9px;width:18px;height:18px;margin-left:-9px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffb0b0,#c40f0f 45%,#5a0505);box-shadow:0 3px 6px rgba(0,0,0,.5)}
+.dclose{position:absolute;right:6px;top:4px;width:36px;height:36px;border:0;background:transparent;color:#0d0d0d;font:400 26px/1 var(--serif);cursor:pointer}
+.dtag{font:500 14px/1.2 var(--serif);letter-spacing:.12em;display:flex;gap:.9em;align-items:baseline;margin:0 40px 10px 0}
+.dtag #dTag{font:800 22px/1 var(--serif);letter-spacing:.04em}
+.dmedia{position:relative;aspect-ratio:16/9;background:#111;margin-bottom:14px;overflow:hidden}
+.dmedia canvas,.dmedia video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.dmedia .dcap{position:absolute;left:8px;top:6px;font:11px/1 var(--mono);color:#fff;letter-spacing:.1em;text-shadow:0 0 4px #000}
+.dmedia .drec{position:absolute;right:9px;top:7px;width:9px;height:9px;border-radius:50%;background:#ff2229;animation:recb 1.2s steps(1) infinite}
+#dTitle{margin:0 0 8px;font:800 19px/1.45 var(--serif);letter-spacing:.04em}
+#dBody{margin:0;font:400 14.5px/1.95 var(--serif);letter-spacing:.04em;text-align:left}
+#dNote{margin-top:12px;padding-top:9px;border-top:1px solid rgba(0,0,0,.35);font:11px/1.6 var(--mono);letter-spacing:.06em;color:#333}
+@media (max-width:720px),(max-aspect-ratio:1/1){
+  #dossier{left:0;right:0;margin:0 auto;bottom:max(12px,env(safe-area-inset-bottom));width:min(440px,calc(100vw - 20px))}
+  .dcard{max-height:min(54vh,470px)}
+  .dmedia{margin-bottom:10px}
+}
+
+/* ---------- 導入（物理演算） ---------- */
+#intro{position:absolute;inset:0;z-index:50;touch-action:manipulation;cursor:default}
+#introBg{position:absolute;inset:0;
+  background:
+    linear-gradient(to top,#2b2612 0 5%,#15120a 5% 5.6%,transparent 5.6%),
+    radial-gradient(ellipse at 50% -10%,rgba(255,250,190,.32),transparent 60%),
+    linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,.08) 45%,rgba(0,0,0,.5)),
+    repeating-linear-gradient(90deg,#8a8342 0 46px,#7f783a 46px 50px,#8a8342 50px 52px,#726b33 52px 54px)}
+#introBg::after{content:'';position:absolute;inset:0;background:#fff;mix-blend-mode:soft-light;opacity:0;animation:flick 3.2s steps(1) infinite}
+#introCanvas{position:absolute;inset:0;width:100%;height:100%}
+#introUI{position:absolute;inset:0;pointer-events:none;transition:opacity .25s}
+#introUI.gone{opacity:0}
+#introTitle{position:absolute;left:0;right:0;top:max(22px,env(safe-area-inset-top));text-align:center;font:800 14px/1.7 var(--serif);letter-spacing:.24em;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.7)}
+#introTitle small{display:block;font:400 11px/1.6 var(--mono);letter-spacing:.2em;opacity:.8;margin-top:2px}
+#introMsg{position:absolute;left:0;right:0;top:32%;text-align:center;font:500 15px/1.9 var(--serif);letter-spacing:.2em;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.85)}
+#introMsg.tap{font-size:17px;animation:blink 1.5s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+#flash.go{animation:flashA .6s ease-out 1}
+@keyframes flashA{0%{opacity:.95}100%{opacity:0}}
+
+@media (prefers-reduced-motion:reduce){
+  #fxGrain,#fxFlick,.cam .roll,#fxScan::after{animation:none}
+  #app.shake{animation:none}
+  .dcard{animation:none}
+}
+</style>
 </head>
 <body>
 
-  <!-- 探索ワールド -->
-  <div id="world">
-    <!-- スタート位置（中央付近） -->
-    <div id="start" class="spot" style="top: 1400px; left: 1350px; border-color: #ffffff; color: #ffffff;">
-      <h3>📍 スタート地点</h3>
-      <p>画面をスワイプして探検してください。</p>
-    </div>
+<!-- 歪み用フィルタ（ロゴに適用。JSで scale を微妙に揺らす） -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <filter id="warp1" x="-10%" y="-20%" width="120%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.010 0.028" numOctaves="2" seed="4" result="n"/><feDisplacementMap class="dm" in="SourceGraphic" in2="n" scale="8" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="warp2" x="-10%" y="-20%" width="120%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.014 0.022" numOctaves="2" seed="11" result="n"/><feDisplacementMap class="dm" in="SourceGraphic" in2="n" scale="8" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="warp3" x="-10%" y="-20%" width="120%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.008 0.034" numOctaves="2" seed="23" result="n"/><feDisplacementMap class="dm" in="SourceGraphic" in2="n" scale="8" xChannelSelector="R" yChannelSelector="G"/></filter>
+  </defs>
+</svg>
 
-    <!-- 作品1 (北西) -->
-    <div id="cam1" class="spot" style="top: 500px; left: 600px;">
-      <h3>📹 CAM-01 [Office]</h3>
-      <p>作品資料 A：オフィス監視映像</p>
-    </div>
-
-    <!-- 作品2 (東) -->
-    <div id="cam2" class="spot" style="top: 1300px; left: 2300px;">
-      <h3>📹 CAM-02 [Corridor]</h3>
-      <p>作品資料 B：廊下監視映像</p>
-    </div>
-
-    <!-- 作品3 (南) -->
-    <div id="cam3" class="spot" style="top: 2400px; left: 1200px;">
-      <h3>📹 CAM-03 [Secret Room]</h3>
-      <p>作品資料 C：地下室監視映像</p>
+<div id="app">
+  <div id="viewport">
+    <div id="board">
+      <svg id="bgsvg" aria-hidden="true"></svg>
+      <div id="layer"></div>
+      <svg id="strings" aria-hidden="true"><g id="stringsG"></g><g id="pinsG"></g></svg>
     </div>
   </div>
 
-  <!-- 動画用モーダル -->
-  <div id="videoModal" class="modal-overlay">
-    <div class="modal-content">
-      <span class="modal-close" onclick="closeModal()">&times;</span>
-      <h3 id="modalTitle">CAM-00</h3>
-      <video id="modalVideo" controls autoplay muted playsinline></video>
+  <div id="fxGrain" class="fx"></div>
+  <div id="fxScan" class="fx"></div>
+  <div id="fxVig" class="fx"></div>
+  <div id="fxFlick" class="fx"></div>
+
+  <div id="hud">
+    <div id="hudTitle"><b>桑沢学園白昼夢 現象調査委員會</b>捜査ボード ／ 案件 2026.10.08</div>
+    <div id="index"></div>
+    <div id="hint">ドラッグで探索 ／ ピンチ・ホイールで拡大縮小 ／ 手がかりをタップ</div>
+    <div id="hudBtns">
+      <span id="hudCoord">X 0000 Y 0000 ×1.00</span>
+      <button class="hb" id="bHome" title="中心へ戻る" aria-label="中心へ戻る">中心</button>
+      <button class="hb" id="bIndex" title="手がかり一覧" aria-label="手がかり一覧">索引</button>
+      <button class="hb" id="bIn" aria-label="拡大">＋</button>
+      <button class="hb" id="bOut" aria-label="縮小">－</button>
     </div>
   </div>
 
-  <script>
-    const elem = document.getElementById('world');
-    const panzoom = Panzoom(elem, {
-      maxScale: 3,
-      minScale: 0.5,
-      contain: 'outside',
-      animate: true,
-      duration: 1200, // 自動移動にかける時間（ミリ秒）
-      easing: 'ease-in-out'
-    });
+  <aside id="dossier" hidden aria-live="polite">
+    <div class="dcard">
+      <i class="dpin"></i>
+      <button class="dclose" id="dClose" aria-label="閉じる">×</button>
+      <div class="dtag"><span id="dTag"></span><span id="dSub"></span></div>
+      <div class="dmedia" id="dMedia"></div>
+      <h2 id="dTitle"></h2>
+      <p id="dBody"></p>
+      <div id="dNote"></div>
+    </div>
+  </aside>
 
-    // 各作品の動画データマップ
-    const itemData = {
-      'cam1': { title: 'CAM-01 [Office]', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4' },
-      'cam2': { title: 'CAM-02 [Corridor]', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4' },
-      'cam3': { title: 'CAM-03 [Secret Room]', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4' }
+  <div id="intro">
+    <div id="introBg"></div>
+    <canvas id="introCanvas"></canvas>
+    <div id="introUI">
+      <div id="introTitle">桑沢学園白昼夢 現象調査委員會<small>SCENE RECONSTRUCTION</small></div>
+      <div id="introMsg"></div>
+    </div>
+    <div id="flash"></div>
+  </div>
+</div>
+
+<noscript><p style="position:fixed;inset:0;z-index:99;background:#262626;color:#fff;margin:0;padding:40px">このページの表示には JavaScript が必要です。</p></noscript>
+
+<!-- Panzoom / Matter.js は CDN。読み込めない場合は下のスクリプト内の簡易版に自動で切り替わります -->
+<script src="https://cdn.jsdelivr.net/npm/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
+
+<script>
+(() => {
+'use strict';
+
+/* =====================================================================
+   0. 設定・手がかりデータ（ここを編集して作品を育てる）
+   ===================================================================== */
+const CONFIG = {
+  BOARD: 3200,          // 盤面の一辺(px)。イラレ案(1932px)をこの大きさに拡大して配置
+  cameraVideo: '',      // 例: 'media/cam01.mp4'。空なら疑似ライブ映像(Canvas→<video>)を自動生成
+  logoImage: '',        // 例: 'media/logo.svg'。空なら明朝体で組んだ仮ロゴ
+  qrIntro: 'short',     // QRアクセス時の導入: 'short'=短縮版で自動遷移 / 'none'=物理演算を省略
+};
+
+// URL:  ?item=cam1 / ?item=001 … / ?item=victim / ?item=committee   （?seed=123 で配置を固定）
+// video に mp4 を指定すると、ポップアップ内でその動画をループ再生します。
+const META = {
+  cam1: { tag:'CAM01', sub:'監視カメラ', title:'旧校舎 二階・東廊下',
+    body:'18時29分。廊下に人影はない。だが同時刻の音声には、三人分の足音が記録されていた。映像は毎回、同じ位置で一瞬だけ途切れる。',
+    note:'REC 2026.10.08 ／ 記録者：不明', video:'', poster:'' },
+  '001': { tag:'#001', sub:'発見物', title:'廊下の突き当たり',
+    body:'前日の巡回記録には存在しない。触れた者は全員、その日の夕方の記憶が曖昧になっている。',
+    note:'発見 16:42 ／ 回収：不可', video:'', poster:'' },
+  '002': { tag:'#002', sub:'発見物', title:'二年C組・黒板',
+    body:'貼られていた。丸いはずなのに、見る角度によって縁が四角く見えるという証言が七件。',
+    note:'発見 08:15 ／ 目撃者：7名', video:'', poster:'' },
+  '003': { tag:'#003', sub:'発見物', title:'階段の踊り場',
+    body:'立てかけてあった。運び出そうとした二名は、いずれも「同じ階を二度降りた」と述べている。',
+    note:'発見 17:03 ／ 運搬：失敗', video:'', poster:'' },
+  '004': { tag:'#004', sub:'発見物', title:'図書室・窓辺',
+    body:'辺の数を数えるたびに答えが変わる。現在の記録は「五」。次に数える者は、記録を見ないこと。',
+    note:'発見 14:20 ／ 計数：不安定', video:'', poster:'' },
+  '006': { tag:'#006', sub:'発見物', title:'非常口・誘導灯の下',
+    body:'夕方にだけ現れる。誰に尋ねても、朝には見たことがないと言う。夕方には全員が、前から知っていたと言う。',
+    note:'出現 18:00〜 ／ 消失：不明', video:'', poster:'' },
+  '007': { tag:'#007', sub:'発見物', title:'机の下',
+    body:'誰の持ち物でもない。持ち主を探した職員は、持ち主の顔を思い出せなかった。',
+    note:'発見 12:48 ／ 所有者：████', video:'', poster:'' },
+  '008': { tag:'#008', sub:'発見物', title:'化粧室・鏡の裏',
+    body:'欠けている。欠けた部分がどこにあるのかは、まだ見つかっていない。',
+    note:'発見 15:31 ／ 欠損：未回収', video:'', poster:'' },
+  '009': { tag:'#009', sub:'発見物', title:'体育館・壇上',
+    body:'半分だけが残っている。もう半分は、我々の中の誰かが持っているはずだ。',
+    note:'発見 07:55 ／ 照合：未実施', video:'', poster:'' },
+  victim: { tag:'被害者', sub:'', title:'氏名：████ ／ 所属：不明',
+    body:'最後の目撃は18:29。本人は「何も知らない」と繰り返している。だが、知っているはずのことを、知らない。',
+    note:'状態：観察中', video:'', poster:'' },
+  committee: { tag:'委員会', sub:'', title:'桑沢学園白昼夢 現象調査委員會',
+    body:'我々は調査を開始した。一体何が起こっているのか。原因は何か。条件は。──ここにある手がかりは、見るたびに位置を変える。',
+    note:'連絡：委員会室（存在しない部屋）', video:'', poster:'' },
+};
+const INDEX_ORDER = ['cam1','001','002','003','004','006','007','008','009','victim','committee'];
+const INDEX_LABEL = { cam1:'CAM01', victim:'被害者', committee:'委員会' };
+
+/* =====================================================================
+   1. ユーティリティ / 乱数
+   ===================================================================== */
+const $ = (s, r=document) => r.querySelector(s);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const lerp = (a,b,t) => a + (b-a)*t;
+const TAU = Math.PI*2;
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const easeOutCubic = t => 1 - Math.pow(1-t, 3);
+const easeInOutCubic = t => t<.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
+const mk = (tag, cls, html) => { const e = document.createElement(tag); if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; };
+const NS = 'http://www.w3.org/2000/svg';
+const svgEl = (tag, attrs) => { const e = document.createElementNS(NS, tag); for(const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+const P2 = n => String(n).padStart(2,'0');
+
+const params = new URLSearchParams(location.search);
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+const SEED = params.has('seed') ? (parseInt(params.get('seed'),10)||1) : (Math.random()*4294967296)>>>0;
+const rnd = mulberry32(SEED);                 // 盤面のランダム化（?seed= で再現可能）
+const rr = (a,b) => a + rnd()*(b-a);
+const ri = (a,b) => Math.floor(rr(a, b+1));
+const pick = arr => arr[Math.floor(rnd()*arr.length)];
+const shuffle = arr => { const a = arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const rand = (a,b) => a + Math.random()*(b-a); // 演出用（毎回変わってよい乱数）
+
+/* =====================================================================
+   2. 盤面の構築（イラレ案の座標 → 毎回ランダムに揺らして配置）
+   ===================================================================== */
+const BOARD = CONFIG.BOARD;
+const K = BOARD/1932;
+document.documentElement.style.setProperty('--k', K);
+const viewport = $('#viewport'), board = $('#board'), layer = $('#layer');
+board.style.width = board.style.height = BOARD+'px';
+for(const id of ['bgsvg','strings']){ const s=$('#'+id); s.setAttribute('viewBox', `0 0 ${BOARD} ${BOARD}`); s.setAttribute('width',BOARD); s.setAttribute('height',BOARD); }
+
+const floaters = [];      // ふよふよ動く全要素
+const byKey = {};
+const glitchables = [];   // 文字化けさせる短文
+const logos = [];
+const REDUCE = RM ? .35 : 1;
+
+function addFloat(key, el, o){
+  const j = o.jit || 0;
+  const f = { key, el,
+    x0:(o.x + (rnd()*2-1)*j)*K, y0:(o.y + (rnd()*2-1)*j)*K,
+    r0:(o.r||0) + (rnd()*2-1)*(o.rj === undefined ? 4 : o.rj),
+    ax:rr(6,15)*(o.amp||1), ay:rr(8,19)*(o.amp||1), ar:rr(.5,1.8)*(o.ampR||1),
+    sp:rr(.22,.5), ph:rr(0,TAU),
+    x:0, y:0, r:0, w:0, h:0, pin:o.pin||null, pinF:o.pinF||null, ext:o.ext||0, foc:o.foc||null };
+  el.classList.add('fl');
+  if(o.z) el.style.zIndex = o.z;
+  layer.appendChild(el);
+  floaters.push(f);
+  if(key) byKey[key] = f;
+  return f;
+}
+function stepFloat(f, t){
+  const A = REDUCE;
+  f.x = f.x0 + A*(f.ax*Math.sin(t*f.sp+f.ph) + f.ax*.35*Math.sin(t*f.sp*2.3+f.ph*1.7));
+  f.y = f.y0 + A*(f.ay*Math.cos(t*f.sp*.9+f.ph*1.3) + f.ay*.3*Math.sin(t*f.sp*1.9+f.ph));
+  f.r = f.r0 + A*f.ar*Math.sin(t*f.sp*.7+f.ph*.5);
+  f.el.style.transform = `translate3d(${f.x.toFixed(2)}px,${f.y.toFixed(2)}px,0) translate(-50%,-50%) rotate(${f.r.toFixed(3)}deg)`;
+}
+function pinWorld(f){
+  const a = f.r*Math.PI/180, c = Math.cos(a), s = Math.sin(a), p = f.pin || [0,0];
+  return { x: f.x + p[0]*c - p[1]*s, y: f.y + p[0]*s + p[1]*c };
+}
+
+/* --- 短文・キャプション（イラレ案の文言と位置） --- */
+const CAPS = [
+  { k:'cap:know',  t:'知っているはずなのに、',   x:840,  y:125,  s:30, r:6,  j:60, pinF:[.46,.9] },
+  { k:'cap:seen',  t:'見慣れているはずなのに、', x:1268, y:370,  s:32, r:3,  j:60, pinF:[.02,.95] },
+  { k:'cap:trace', t:'この世界の痕跡。',         x:655,  y:433,  s:30, r:0,  j:50 },
+  { k:'cap:dejavu',t:'見覚えがない。',           x:172,  y:1115, s:30, r:2,  j:50 },
+  { k:'cap:unk',   t:'知らない。',               x:1270, y:1016, s:34, r:0,  j:22 },
+  { k:'cap:cause', t:'原因は<span class="up">何</span>か', x:392, y:1495, s:55, r:0, j:60, pinF:[-.05,.9], plain:false },
+  { k:'cap:cond',  t:'条件は。',                 x:1100, y:1768, s:70, r:8,  j:60, pinF:[-.07,-.62] },
+  { k:'cap:real',  t:'現<b>実</b>性を帯<b>び</b>た', x:1500, y:855, s:34, r:14, j:30, plain:false },
+  { k:'cap:kuu',   t:'空想の<b>世</b>界。',      x:1660, y:805,  s:34, r:3,  j:30, plain:false },
+  { k:'cap:start', t:'我々は調査を開始した',     x:790,  y:1088, s:30, r:-9, j:20, cls:'bold' },
+  { k:'cap:what',  t:'一体何が起こっているのか', x:1035, y:1160, s:30, r:5,  j:20, cls:'bold' },
+];
+for(const c of CAPS){
+  const el = mk('div', 'txt '+(c.cls||''), c.t);
+  el.style.fontSize = (c.s*K)+'px';
+  if(c.plain !== false) glitchables.push(el);
+  addFloat(c.k, el, { x:c.x, y:c.y, r:c.r, jit:c.j, pinF:c.pinF });
+}
+
+/* --- 白昼夢ロゴ ×7 --- */
+// const LOGO_POS = [[338,205,-8],[1102,268,-6],[1503,705,-6],[865,815,-3],[825,1462,-3],[1672,1690,-4],[266,1790,-6]];
+// LOGO_POS.forEach((p,i) => {
+//   const w = mk('div', 'lgw');
+//   const inner = mk('div', 'logo', CONFIG.logoImage ? `<img src="${CONFIG.logoImage}" alt="白昼夢">` : '<i>白</i><i>昼</i><i>夢</i>');
+//   inner.style.filter = `url(#warp${(i%3)+1})`;
+//   w.appendChild(inner);
+//   if(i === 2) w.appendChild(mk('span','toha','とは'));
+//   logos.push(inner);
+//   addFloat('logo'+(i+1), w, { x:p[0], y:p[1], r:p[2], jit:(i===3?28:48), rj:6, ampR:1.4, pinF: i===2 ? [.15,.6] : null });
+// });
+// GIF画像のパス（media フォルダ内の logo.gif を参照）
+const logoGifSrc = CONFIG.logoGif || CONFIG.logoImage || 'media/logo.gif';
+const logoGifPathWithCache = `${logoGifSrc}?t=${Date.now()}`;
+
+// 画像が読み込めなかった場合のフォールバック用テキスト
+const FALLBACK_TEXT = '<i>白</i><i>昼</i><i>夢</i>';
+
+const LOGO_POS = [[338,205,-8],[1102,268,-6],[1503,705,-6],[865,815,-3],[825,1462,-3],[1672,1690,-4],[266,1790,-6]];
+
+LOGO_POS.forEach((p,i) => {
+  const w = mk('div', 'lgw');
+  
+  // 初期状態では GIF 画像を表示
+  const inner = mk('div', 'logo', `<img src="${logoGifPathWithCache}" alt="白昼夢">`);
+  
+  // 画像の読み込みエラー（onerror）が発生した場合、テキストロゴに差し替える
+  const img = inner.querySelector('img');
+  if (img) {
+    img.onerror = () => {
+      inner.innerHTML = FALLBACK_TEXT;
     };
+  }
 
-    // 指定された要素（スポット）を画面の中央に収める移動関数
-    function focusElement(elementId, autoOpenVideo = false) {
-      const target = document.getElementById(elementId);
-      if (!target) return;
+  inner.style.filter = `url(#warp${(i%3)+1})`;
+  w.appendChild(inner);
+  if(i === 2) w.appendChild(mk('span','toha','とは'));
+  logos.push(inner);
+  addFloat('logo'+(i+1), w, { x:p[0], y:p[1], r:p[2], jit:(i===3?28:48), rj:6, ampR:1.4, pinF: i===2 ? [.15,.6] : null });
+});
 
-      // 対象要素の座標（キャンバス上の位置）を取得
-      const targetX = parseFloat(target.style.left);
-      const targetY = parseFloat(target.style.top);
 
-      // 画面中央に持ってくる計算
-      const screenW = window.innerWidth;
-      const screenH = window.innerHeight;
-      const panX = -(targetX - screenW / 2 + 140); // 140は要素幅の半分
-      const panY = -(targetY - screenH / 2 + 50);
+/* --- 大きな桑沢 / 桑澤 / 小さな走り書き --- */
+addFloat('kuwa1', mk('div','big','<i>桑</i><i>沢</i>'), { x:1545, y:225, r:22, jit:40, rj:5, amp:1.3 });
+addFloat('kuwa2', mk('div','kuwa2','<b>桑</b><b>澤</b><small>くわさわ</small>'), { x:1315, y:1445, r:-2, jit:40, rj:5 });
+[['くわさわ',1285,533,-24],['はくちゅうむ',177,792,-58],['ひるのゆめ',1838,1440,-22],['さわ',560,1170,20]].forEach((s,i) => {
+  addFloat('scrib'+i, mk('div','scrib',s[0]), { x:s[1], y:s[2], r:s[3], jit:25, rj:10, ampR:3, amp:1.4 });
+});
 
-      // スムースパン移動
-      panzoom.pan(panX, panY, { animate: true });
+/* --- スタンプ（極秘 / 調査中 …）--- */
+[['極秘','CLASSIFIED',600,285,-12],['調査中','UNDER INVESTIGATION',1000,1640,7],['禁帯出','DO NOT REMOVE',1650,1335,-6]].forEach((s,i) => {
+  const el = mk('div','stamp',`${s[0]}<small>${s[1]}</small>`);
+  el.style.fontSize = (30*K)+'px';
+  addFloat('stamp'+i, el, { x:s[2], y:s[3], r:s[4], jit:40, rj:8 });
+});
 
-      // 移動完了後に動画を開く
-      if (autoOpenVideo && itemData[elementId]) {
-        setTimeout(() => {
-          openModal(itemData[elementId].title, itemData[elementId].video);
-        }, 1300); // 1.3秒後（移動完了直後）に開く
-      }
+/* --- 証拠物の形と色（毎回ランダム）--- */
+function polyMarkup(n){
+  const pts = [], a0 = rr(0,TAU);
+  for(let i=0;i<n;i++){
+    const a = a0 + i*TAU/n + rr(-.35,.35), r = rr(55,96);
+    pts.push((100+Math.cos(a)*r).toFixed(1)+','+(100+Math.sin(a)*r).toFixed(1));
+  }
+  return `<polygon points="${pts.join(' ')}"/>`;
+}
+function shapeMarkup(color){
+  const t = ri(0,6); let inner;
+  if(t===0){ const w=rr(90,190), h=rr(55,150); inner = `<rect x="${(100-w/2).toFixed(1)}" y="${(100-h/2).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"/>`; }
+  else if(t===1) inner = polyMarkup(3);
+  else if(t===2) inner = polyMarkup(4);
+  else if(t===3) inner = polyMarkup(5);
+  else if(t===4) inner = `<circle cx="100" cy="100" r="${rr(55,88).toFixed(1)}"/>`;
+  else if(t===5) inner = `<path d="M12 116A88 88 0 0 1 188 116Z"/>`;
+  else inner = `<path d="M100 100L100 12A88 88 0 0 1 188 100Z"/>`;
+  return `<svg viewBox="0 0 200 200" fill="${color}" style="transform:rotate(${rr(0,360).toFixed(0)}deg)">${inner}</svg>`;
+}
+const PALETTE = shuffle(['#0000ff','#f7941d','#29abe2','#ff00ff','#ffff00','#00ff00','#39b54a','#93278f']);
+const CARD_POS = [['009',152,387],['007',1000,495],['004',1754,597],['008',377,945],['006',137,1285],['002',1526,1156],['001',1703,1535],['003',618,1693]];
+CARD_POS.forEach((c,i) => {
+  const el = mk('div','card'); el.dataset.key = c[0];
+  el.innerHTML = `<span class="lab">#${c[0]}</span>`;
+  const W = 112*K, H = 158*K, S = 170*K;
+  const dx = rr(-70,90), dy = rr(12,120);
+  const shp = mk('div','shp', shapeMarkup(PALETTE[i]));
+  shp.style.cssText = `width:${S}px;height:${S}px;left:${W/2 + dx*K - S/2}px;top:${H/2 + dy*K - S/2}px`;
+  el.appendChild(shp);
+  addFloat(c[0], el, { x:c[1], y:c[2], r:rr(-5,5), rj:3, jit:80, pin:[dx*K + rr(-12,12)*K, dy*K + rr(-12,12)*K], ext:330, foc:[dx*K*.5, dy*K*.5] });
+});
+{ // 被害者
+  const el = mk('div','card victim'); el.dataset.key = 'victim';
+  el.innerHTML = '<span class="lab">被害者</span>';
+  addFloat('victim', el, { x:760, y:1055, r:0, rj:3, jit:18, ext:300, pin:[0,0], amp:.8 });
+}
+{ // 調査委員會（赤い正方形）
+  const el = mk('div','committee'); el.dataset.key = 'committee';
+  el.innerHTML = '<div class="sq"></div><div class="ct">桑沢学園白昼夢<span>現象調査委員會</span></div>';
+  addFloat('committee', el, { x:1062, y:1030, r:4, rj:3, jit:18, ext:360, amp:.8 });
+}
+
+/* --- 監視カメラ（盤面に固定配置され、常時ループ再生） --- */
+let camVideo, camCanvas, camCtx, camTs;
+{
+  const el = mk('div','cam'); el.dataset.key = 'cam1';
+  el.innerHTML = '<div class="scr"><canvas width="320" height="180"></canvas><video muted loop playsinline autoplay preload="auto"></video><div class="tint"></div><div class="scan"></div><div class="roll"></div>'
+    + '<span class="lbl">監視カメラ</span><span class="cid">CAM01</span><span class="ts">2026.10.08 18:29:05</span></div><i class="rec"></i>';
+  camCanvas = el.querySelector('canvas'); camVideo = el.querySelector('video'); camTs = el.querySelector('.ts');
+  camVideo.muted = true; camVideo.setAttribute('muted',''); camVideo.playsInline = true;
+  camCtx = camCanvas.getContext('2d');
+  addFloat('cam1', el, { x:575, y:623, r:5.7, rj:2, jit:22, amp:.55, ampR:.5, ext:540 });
+}
+$('.cam .rec').style.zIndex = 3;
+
+/* --- 背景SVG: 揺らぐ塊 / ブロックの間取り線 / 座標ラベル / 塵 --- */
+const bgsvg = $('#bgsvg');
+const blobs = [];
+for(let i=0;i<4;i++){
+  const p = svgEl('path', { fill:'rgba(255,255,255,.028)', stroke:'rgba(255,255,255,.05)', 'stroke-width':2 });
+  bgsvg.appendChild(p);
+  blobs.push({ el:p, cx:rr(.15,.85)*BOARD, cy:rr(.15,.85)*BOARD, r:rr(380,760), s:rr(0,TAU) });
+}
+{ let d = '';
+  for(let i=0;i<48;i++){
+    const gx = ri(0,19)*160, gy = ri(0,19)*160, len = ri(1,5)*160;
+    d += rnd()<.5 ? `M${gx} ${gy}h${len}` : `M${gx} ${gy}v${len}`;
+  }
+  bgsvg.appendChild(svgEl('path', { d, fill:'none', stroke:'rgba(255,255,255,.075)', 'stroke-width':3 }));
+  ['LEVEL 0','SECTOR A-07','██-██','LEVEL 1?','出口なし','A-12','NOCLIP','SECTOR C-03','██-19','THE HABITABLE ZONE'].forEach(tx => {
+    const t = svgEl('text', { x:rr(.05,.92)*BOARD, y:rr(.05,.95)*BOARD, fill:'rgba(255,255,255,.2)', 'font-size':22, 'font-family':'Share Tech Mono, monospace', 'letter-spacing':4 });
+    t.textContent = tx; bgsvg.appendChild(t);
+  });
+}
+const dust = [];
+for(let i=0;i<70;i++){
+  const c = svgEl('circle', { r:rr(1,3), fill:'rgba(255,250,220,'+rr(.08,.3).toFixed(2)+')' });
+  bgsvg.appendChild(c);
+  dust.push({ el:c, x:rr(0,BOARD), y:rr(0,BOARD), vx:rr(-.15,.15), vy:rr(-.35,-.05) });
+}
+
+/* --- 捜査線（赤い糸）: 要素の座標に追従して毎フレーム更新 --- */
+const EDGES = [
+  ['cap:know','009'],['009','008'],['009','victim'],['victim','002'],['victim','001'],['002','003'],
+  ['cap:cause','003'],['cap:cond','001'],['007','006'],['007','logo3'],['cap:seen','004'],['004','006'],
+];
+{ const ks = ['001','002','003','004','006','007','008','009','victim'];
+  for(let n=0;n<2;n++){ // 毎回ちがう線を2本だけ追加
+    const a = pick(ks), b = pick(ks);
+    if(a !== b && !EDGES.some(e => (e[0]===a&&e[1]===b)||(e[0]===b&&e[1]===a))) EDGES.push([a,b]);
+  }
+}
+const stringsG = $('#stringsG'), pinsG = $('#pinsG');
+const edgeObjs = [], pinObjs = new Map();
+EDGES.forEach(e => {
+  const a = byKey[e[0]], b = byKey[e[1]]; if(!a || !b) return;
+  const glow = svgEl('path', { fill:'none', stroke:'rgba(255,42,42,.16)', 'stroke-width':9, 'stroke-linecap':'round' });
+  const line = svgEl('path', { fill:'none', stroke:'#ff2a2a', 'stroke-width':3, 'stroke-linecap':'round' });
+  stringsG.appendChild(glow); stringsG.appendChild(line);
+  edgeObjs.push({ a, b, glow, line, ph:rr(0,TAU), sg:rnd()<.5?-1:1 });
+  [a,b].forEach(f => {
+    if(pinObjs.has(f)) return;
+    const g = svgEl('g', {});
+    g.appendChild(svgEl('circle', { r:11, fill:'#6d0b0b', stroke:'#ff5050', 'stroke-width':2 }));
+    g.appendChild(svgEl('circle', { r:3.6, cx:-3.5, cy:-3.5, fill:'#ffc0c0' }));
+    pinsG.appendChild(g); pinObjs.set(f, g);
+  });
+});
+function updateStrings(t){
+  for(const e of edgeObjs){
+    const a = pinWorld(e.a), b = pinWorld(e.b);
+    const dx = b.x-a.x, dy = b.y-a.y, len = Math.hypot(dx,dy) || 1;
+    const sag = e.sg*(9 + 8*Math.sin(t*.8 + e.ph))*REDUCE;
+    const mx = (a.x+b.x)/2 - dy/len*sag, my = (a.y+b.y)/2 + dx/len*sag;
+    const d = `M${a.x.toFixed(1)} ${a.y.toFixed(1)}Q${mx.toFixed(1)} ${my.toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}`;
+    e.line.setAttribute('d', d); e.glow.setAttribute('d', d);
+  }
+  pinObjs.forEach((g,f) => { const p = pinWorld(f); g.setAttribute('transform', `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`); });
+}
+
+function measure(){
+  for(const f of floaters){
+    f.w = f.el.offsetWidth; f.h = f.el.offsetHeight;
+    if(f.pinF) f.pin = [f.pinF[0]*f.w, f.pinF[1]*f.h];
+    if(!f.ext) f.ext = Math.max(f.w, f.h);
+  }
+}
+floaters.forEach(f => stepFloat(f, 0));
+measure();
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+window.addEventListener('load', measure);
+
+/* =====================================================================
+   3. 監視カメラ映像（動画が無い間の疑似ライブ映像）
+   ===================================================================== */
+let camMode = 'canvas';
+function initCamFeed(){
+  camVideo.addEventListener('playing', () => camVideo.classList.add('on'));
+  if(CONFIG.cameraVideo){
+    camMode = 'video';
+    camVideo.src = CONFIG.cameraVideo;
+    camVideo.play().catch(() => {});
+    return;
+  }
+  try{ // Canvas の映像を <video> に流し込む（常時ループ再生の <video> として動作）
+    if(camCanvas.captureStream){ camVideo.srcObject = camCanvas.captureStream(24); camVideo.play().catch(() => {}); }
+  }catch(err){ /* 失敗時は Canvas がそのまま見える */ }
+}
+function drawCam(t){
+  const g = camCtx, W = 320, H = 180;
+  const vx = 160 + Math.sin(t*.4)*3, vy = 86 + Math.cos(t*.33)*2;
+  const L = (.86 + .06*Math.sin(t*31) + .05*Math.sin(t*7.3)) * (Math.sin(t*.9) > .988 ? .45 : 1);
+  const col = v => { const c = clamp(v*L, 0, 255)|0; return `rgb(${c},${(c*.97)|0},${(c*.8)|0})`; };
+  const P = (x,y,z) => [vx + x/z, vy + y/z];
+  const poly = (pts,fill) => { g.fillStyle = fill; g.beginPath(); pts.forEach((p,i) => i ? g.lineTo(p[0],p[1]) : g.moveTo(p[0],p[1])); g.closePath(); g.fill(); };
+  const zb = 4.6;
+  g.fillStyle = '#000'; g.fillRect(0,0,W,H);
+  poly([P(-160,-88,zb),P(160,-88,zb),P(160,92,zb),P(-160,92,zb)], col(120));
+  poly([P(-160,92,1),P(160,92,1),P(160,92,zb),P(-160,92,zb)], col(92));
+  poly([P(-160,-88,1),P(160,-88,1),P(160,-88,zb),P(-160,-88,zb)], col(150));
+  poly([P(-160,-88,1),P(-160,-88,zb),P(-160,92,zb),P(-160,92,1)], col(112));
+  poly([P(160,-88,1),P(160,-88,zb),P(160,92,zb),P(160,92,1)], col(104));
+  // カーペットの継ぎ目
+  g.strokeStyle = 'rgba(0,0,0,.28)'; g.lineWidth = 1;
+  for(const z of [1.5,2.2,3.1]){ const a = P(-160,92,z), b = P(160,92,z); g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); }
+  // 扉
+  poly([P(160,-40,2.1),P(160,-40,2.8),P(160,92,2.8),P(160,92,2.1)], col(38));
+  poly([P(-160,-40,1.4),P(-160,-40,1.95),P(-160,92,1.95),P(-160,92,1.4)], col(42));
+  poly([P(-160,-40,3.3),P(-160,-40,3.9),P(-160,92,3.9),P(-160,92,3.3)], col(40));
+  // 蛍光灯（ときどき死ぬ）
+  [1.35,2.05,3.0,4.0].forEach((z,i) => {
+    let lf = .78 + .22*Math.sin(t*(3+i*1.7)+i);
+    if(Math.sin(t*(.6+i*.13)+i*5) > .93) lf = .12;
+    const c = clamp(255*lf*L, 0, 255)|0;
+    poly([P(-40,-88,z),P(40,-88,z),P(40,-88,z+.5),P(-40,-88,z+.5)], `rgb(${c},${c},${(c*.86)|0})`);
+  });
+  // 廊下の奥から近づく「何か」
+  const cyc = t % 44;
+  if(cyc > 8 && cyc < 26 && Math.sin(t*13) > -.85){
+    const u = (cyc-8)/18, z = 4.4 - u*2.6, f = P(Math.sin(u*3)*30, 92, z), hh = 150/z;
+    g.fillStyle = 'rgba(6,6,10,.93)';
+    g.fillRect(f[0]-hh*.11, f[1]-hh*.62, hh*.22, hh*.62);
+    g.fillRect(f[0]-hh*.19, f[1]-hh*.6, hh*.06, hh*.34);
+    g.fillRect(f[0]+hh*.13, f[1]-hh*.6, hh*.06, hh*.34);
+    g.beginPath(); g.arc(f[0], f[1]-hh*.72, hh*.09, 0, TAU); g.fill();
+  }
+  // ノイズと横ズレ
+  g.fillStyle = 'rgba(255,255,255,.1)';
+  for(let i=0;i<34;i++) g.fillRect(Math.random()*W|0, Math.random()*H|0, 1, 1);
+  if(Math.random() < .03){ const y = Math.random()*(H-24)|0, h = 4 + Math.random()*20|0; g.drawImage(camCanvas, 0, y, W, h, (Math.random()*26-13)|0, y, W, h); }
+}
+const camBase = Date.UTC(2026,9,8,18,29,5), camT0 = performance.now();
+let lastStamp = '';
+function camStamp(){
+  const d = new Date(camBase + Math.floor((performance.now()-camT0)/1000)*1000);
+  return `${d.getUTCFullYear()}.${P2(d.getUTCMonth()+1)}.${P2(d.getUTCDate())} ${P2(d.getUTCHours())}:${P2(d.getUTCMinutes())}:${P2(d.getUTCSeconds())}`;
+}
+initCamFeed();
+
+/* =====================================================================
+   4. Panzoom（CDNが使えない時は同じAPIの簡易版に切り替え）
+   ===================================================================== */
+function MiniPanzoom(el, parent, opts){
+  let x = 0, y = 0; 
+  const s = 1; // 倍率（scale）を1に固定
+  const o = Object.assign({ minScale: 1, maxScale: 1 }, opts);
+  const pts = new Map();
+
+  const apply = () => { el.style.transform = `scale(${s}) translate(${x}px,${y}px)`; };
+  
+  parent.addEventListener('pointerdown', e => {
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  });
+
+  parent.addEventListener('pointermove', e => {
+    const p = pts.get(e.pointerId); if (!p) return;
+    const dx = e.clientX - p.x, dy = e.clientY - p.y; 
+    p.x = e.clientX; p.y = e.clientY;
+
+    // 1本指の移動（Pan）のみ処理し、2本指ピンチ操作は無視
+    if (pts.size === 1) { 
+      x += dx; 
+      y += dy; 
+      apply(); 
     }
+  });
 
-    // URLパラメータのチェック（QRアクセス判定）
-    document.addEventListener('DOMContentLoaded', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const targetItem = urlParams.get('item');
+  const end = e => { 
+    if (pts.delete(e.pointerId)) { 
+      if (!pts.size) el.dispatchEvent(new CustomEvent('panzoomend')); 
+    } 
+  };
+  
+  parent.addEventListener('pointerup', end); 
+  parent.addEventListener('pointercancel', end);
 
-      if (targetItem && itemData[targetItem]) {
-        // QRからアクセスされた場合：該当の座標へ滑らか移動 ＋ 動画表示
-        focusElement(targetItem, true);
-      } else {
-        // 通常アクセスの時：中央のスタート地点へ移動
-        focusElement('start', false);
-      }
+  return {
+    getScale: () => 1,
+    getPan: () => ({ x, y }),
+    setOptions: n => Object.assign(o, n),
+    zoom: () => {}, // ズーム関数を空にして無効化
+    pan: (nx, ny) => { x = nx; y = ny; apply(); },
+    zoomWithWheel: () => {}, // ホイールズームを無効化
+  };
+}
+
+// ズーム倍率を 1 に固定
+const limits = { min: 1, max: 1 };
+function updateLimits() {
+  limits.min = 1;
+  limits.max = 1;
+}
+updateLimits();
+
+// Panzoomの初期化
+const pz = window.Panzoom
+  ? window.Panzoom(board, { 
+      origin: '0 0', 
+      canvas: true, 
+      disableZoom: true, // ★公式Panzoomのズーム無効化
+      minScale: 1, 
+      maxScale: 1, 
+      cursor: 'grab', 
+      animate: false 
+    })
+  : MiniPanzoom(board, viewport, { minScale: 1, maxScale: 1 });
+
+// カメラ: 画面座標 = s * (盤面座標 + (x,y))   （transform-origin: 0 0）
+const cam = {
+  get(){ const p = pz.getPan(); return { x:p.x, y:p.y, s:pz.getScale() }; },
+  set(x,y,s){ pz.zoom(s, {animate:false, force:true}); pz.pan(x,y, {animate:false, force:true}); },
+  view(cx,cy,s,ax,ay){ ax = ax ?? innerWidth/2; ay = ay ?? innerHeight/2; this.set(ax/s - cx, ay/s - cy, s); },
+  center(ax,ay){ const st = this.get(); return { x:(ax ?? innerWidth/2)/st.s - st.x, y:(ay ?? innerHeight/2)/st.s - st.y, s:st.s }; },
+};
+// 初期位置: イラレ案の水色(PC)/マゼンタ(スマホ)の枠を画面いっぱいに収める
+const HOME = { x:966*K, y:965.5*K };
+function homeView(){
+  const vw = innerWidth, vh = innerHeight, land = vw >= vh;
+  const W = (land ? 742 : 269)*K, H = (land ? 417 : 477)*K;
+  return { x:HOME.x, y:HOME.y, s:clamp(Math.min(vw/W, vh/H), limits.min, limits.max) };
+}
+
+let flight = null;
+function cancelFlight(){ if(flight){ const f = flight; flight = null; f.resolve(false); } }
+function flyTo(bx,by,s,o={}){
+  cancelFlight();
+  const vw = innerWidth, vh = innerHeight, ax = o.ax ?? vw/2, ay = o.ay ?? vh/2;
+  const st = cam.get(), c0x = ax/st.s - st.x, c0y = ay/st.s - st.y;
+  s = clamp(s, limits.min, limits.max);
+  const screenDist = Math.hypot(bx-c0x, by-c0y)*Math.min(st.s, s);
+  const bump = o.bump ?? clamp((screenDist - Math.min(vw,vh)*.6)/(Math.max(vw,vh)*2), 0, 1)*.9; // 遠いときは一度引いてから寄る
+  const ls0 = Math.log(st.s), ls1 = Math.log(s), dur = o.dur || 1600, ease = o.ease || easeInOutCubic, t0 = performance.now();
+  return new Promise(resolve => {
+    flight = { resolve, step(now){
+      const u = clamp((now-t0)/dur, 0, 1), e = ease(u);
+      const sc = clamp(Math.exp(lerp(ls0,ls1,e) - bump*Math.sin(Math.PI*e)), limits.min, limits.max);
+      cam.set(ax/sc - lerp(c0x,bx,e), ay/sc - lerp(c0y,by,e), sc);
+      if(u >= 1){ flight = null; resolve(true); }
+    }};
+  });
+}
+
+/* 入力: ホイール / ドラッグ中は自動移動を中断 / 盤面の外へ出すぎたら戻す */
+let settleT = 0;
+viewport.addEventListener('wheel', e => {
+  if(intro.active) return;
+  e.preventDefault(); cancelFlight(); pz.zoomWithWheel(e);
+  clearTimeout(settleT); settleT = setTimeout(settleBounds, 700);
+}, { passive:false });
+board.addEventListener('panzoomend', () => { clearTimeout(settleT); settleT = setTimeout(settleBounds, 250); });
+function settleBounds(){
+  if(flight || intro.active) return;
+  const c = cam.center(), m = 260;
+  const nx = clamp(c.x, -m, BOARD+m), ny = clamp(c.y, -m, BOARD+m);
+  if(nx !== c.x || ny !== c.y) flyTo(nx, ny, c.s, { dur:800, ease:easeOutCubic, bump:0 });
+}
+document.addEventListener('gesturestart', e => e.preventDefault());
+
+/* =====================================================================
+   5. 手がかり選択 / 詳細ポップアップ
+   ===================================================================== */
+function resolveKey(raw){
+  if(!raw) return null;
+  const s = String(raw).trim().toLowerCase().replace(/[\s_\-#]/g,'');
+  if(/^cam(era)?0*1?$/.test(s)) return 'cam1';
+  const m = s.match(/^(?:item|clue|no|id)?0*(\d{1,3})$/);
+  if(m){ const k = String(parseInt(m[1],10)).padStart(3,'0'); return META[k] ? k : null; }
+  return META[s] ? s : null;
+}
+function focusView(key){
+  const f = byKey[key], vw = innerWidth, vh = innerHeight, portrait = vw < vh || vw < 720;
+  const target = portrait ? Math.min(vw*.8, vh*.34) : Math.min(vw*.3, vh*.5);
+  return { x:f.x0 + (f.foc ? f.foc[0] : 0), y:f.y0 + (f.foc ? f.foc[1] : 0), s:clamp(target/(f.ext||320), .55, 2.2),
+           ax:portrait ? vw/2 : vw*.34, ay:portrait ? vh*.3 : vh/2 };
+}
+function selectItem(key, o={}){
+  if(!byKey[key] || !META[key]) return Promise.resolve(false);
+  const v = focusView(key);
+  if(!o.delayOpen) openDossier(key);
+  const p = flyTo(v.x, v.y, v.s, { ax:v.ax, ay:v.ay, dur:o.dur || 1100, ease:o.ease });
+  if(o.delayOpen) p.then(ok => { if(ok) openDossier(key); });
+  return p;
+}
+
+const dossierEl = $('#dossier'), dMedia = $('#dMedia');
+let dosToken = 0, dosKey = null, dosCanvas = null, dosMirror = false;
+function setActive(key){ floaters.forEach(f => f.el.classList.remove('active')); if(key && byKey[key]) byKey[key].el.classList.add('active'); }
+function mountMedia(key, m){
+  dMedia.innerHTML = ''; dosCanvas = null; dosMirror = false;
+  const src = m.video || (key === 'cam1' ? CONFIG.cameraVideo : '');
+  if(src){
+    const v = mk('video'); v.src = src; v.muted = true; v.setAttribute('muted',''); v.loop = true; v.autoplay = true; v.playsInline = true; v.setAttribute('playsinline','');
+    if(m.poster) v.poster = m.poster;
+    dMedia.appendChild(v); v.play().catch(() => {});
+    dMedia.appendChild(mk('span','dcap', key === 'cam1' ? 'CAM01 LIVE' : 'RECORD '+m.tag));
+  }else{
+    const c = mk('canvas'); c.width = 320; c.height = 180; dMedia.appendChild(c); dosCanvas = c; dosMirror = key === 'cam1';
+    dMedia.appendChild(mk('span','dcap', dosMirror ? 'CAM01 LIVE' : 'NO SIGNAL'));
+  }
+  dMedia.appendChild(mk('i','drec'));
+}
+function openDossier(key){
+  const m = META[key]; if(!m) return;
+  dosKey = key; dosToken++;
+  $('#dTag').textContent = m.tag; $('#dSub').textContent = m.sub || '';
+  $('#dTitle').textContent = m.title; $('#dBody').textContent = m.body; $('#dNote').textContent = m.note || '';
+  mountMedia(key, m);
+  dossierEl.hidden = false; dossierEl.classList.remove('closing'); void dossierEl.offsetWidth; dossierEl.classList.add('open');
+  document.body.classList.add('dos-open'); setActive(key);
+}
+function closeDossier(){
+  if(dossierEl.hidden) return;
+  const tok = ++dosToken;
+  dossierEl.classList.remove('open'); dossierEl.classList.add('closing');
+  document.body.classList.remove('dos-open'); setActive(null); dosKey = null;
+  setTimeout(() => { if(tok === dosToken){ dossierEl.hidden = true; dMedia.innerHTML = ''; dosCanvas = null; } }, 380);
+}
+$('#dClose').addEventListener('click', closeDossier);
+addEventListener('keydown', e => { if(e.key === 'Escape') closeDossier(); if((e.key === 'Enter' || e.key === ' ') && intro.active && intro.ready && !intro.exploded){ e.preventDefault(); explode(innerWidth/2, innerHeight*.75); } });
+
+/* タップ判定（ドラッグとタップを分離） */
+let down = null; const activePtrs = new Set();
+addEventListener('pointerdown', e => {
+  activePtrs.add(e.pointerId);
+  if(intro.active || !viewport.contains(e.target)) { down = null; return; }
+  cancelFlight(); viewport.classList.add('grabbing');
+  down = activePtrs.size > 1 ? null : { x:e.clientX, y:e.clientY, t:performance.now(), id:e.pointerId };
+}, true);
+addEventListener('pointerup', e => {
+  activePtrs.delete(e.pointerId); viewport.classList.remove('grabbing');
+  if(!down || e.pointerId !== down.id) return;
+  const moved = Math.hypot(e.clientX-down.x, e.clientY-down.y), dt = performance.now()-down.t; down = null;
+  if(moved > 10 || dt > 500 || intro.active) return;
+  const hit = document.elementFromPoint(e.clientX, e.clientY), item = hit && hit.closest && hit.closest('[data-key]');
+  if(item && META[item.dataset.key]) selectItem(item.dataset.key);
+  else if(!dossierEl.hidden) closeDossier();
+}, true);
+addEventListener('pointercancel', e => { activePtrs.delete(e.pointerId); down = null; viewport.classList.remove('grabbing'); }, true);
+
+/* HUD */
+{
+  const idx = $('#index');
+  INDEX_ORDER.forEach(k => { const b = mk('button','hb', INDEX_LABEL[k] || '#'+k); b.addEventListener('click', () => selectItem(k)); idx.appendChild(b); });
+  $('#bIndex').addEventListener('click', () => idx.classList.toggle('open'));
+  $('#bHome').addEventListener('click', () => { closeDossier(); const h = homeView(); flyTo(h.x, h.y, h.s, { dur:1500 }); });
+  const zoomBy = f => { const c = cam.center(); flyTo(c.x, c.y, c.s*f, { dur:350, ease:easeOutCubic, bump:0 }); };
+  $('#bIn').addEventListener('click', () => zoomBy(1.5)); $('#bOut').addEventListener('click', () => zoomBy(1/1.5));
+}
+
+/* =====================================================================
+   6. 画面エフェクト（グレイン / 文字化け / ロゴのグリッチ）
+   ===================================================================== */
+{
+  const c = mk('canvas'); c.width = c.height = 160; const g = c.getContext('2d'), id = g.createImageData(160,160);
+  for(let i=0;i<id.data.length;i+=4){ const v = Math.random()*255|0; id.data[i] = id.data[i+1] = id.data[i+2] = v; id.data[i+3] = Math.random()*55|0; }
+  g.putImageData(id,0,0); $('#fxGrain').style.backgroundImage = `url(${c.toDataURL()})`;
+}
+if(!RM){
+  setInterval(() => {
+    if(document.hidden || !glitchables.length) return;
+    const el = glitchables[Math.floor(Math.random()*glitchables.length)], orig = el.textContent;
+    const i = Math.floor(Math.random()*orig.length);
+    el.textContent = orig.slice(0,i) + '█▓▒░'[Math.floor(Math.random()*4)] + orig.slice(i+1);
+    setTimeout(() => { el.textContent = orig; }, 140 + Math.random()*220);
+  }, 2400);
+  setInterval(() => {
+    if(document.hidden) return;
+    const l = logos[Math.floor(Math.random()*logos.length)];
+    l.classList.add('glitch'); setTimeout(() => l.classList.remove('glitch'), 260);
+  }, 3300);
+}
+
+/* =====================================================================
+   7. 導入演出（机と椅子が落ちて積み上がる → タップで爆発的に弾け飛ぶ）
+   ===================================================================== */
+const intro = { active:true, ready:false, exploded:false, qrKey:null, bodies:[], rings:[], parts:[], spawned:0, N:0, gap:130, t0:0,
+                engine:null, M:null, u:60, floorY:0, W:0, H:0, dpr:1, exT:0, ox:0, oy:0, walls:[], maxR:0, short:false };
+const introEl = $('#intro'), introBg = $('#introBg'), introMsg = $('#introMsg');
+
+function introResize(){
+  const cv = $('#introCanvas'); intro.dpr = Math.min(devicePixelRatio || 1, 2); intro.W = innerWidth; intro.H = innerHeight;
+  cv.width = intro.W*intro.dpr; cv.height = intro.H*intro.dpr;
+}
+function furniture(kind, u){
+  const wood = '#c2ab6c', dark = '#6a6a6a', pal = ['#0000ff','#f7941d','#29abe2','#ff00ff','#ffff00','#00ff00','#39b54a','#93278f','#b3b3b3'];
+  if(kind === 'desk') return [
+    { x:0, y:-.75*u, w:3.2*u, h:.26*u, c:wood }, { x:-1.3*u, y:.1*u, w:.22*u, h:1.5*u, c:dark },
+    { x:1.3*u, y:.1*u, w:.22*u, h:1.5*u, c:dark }, { x:0, y:.42*u, w:2.4*u, h:.18*u, c:'#8f8f8f' } ];
+  if(kind === 'chair'){ const c = pal[Math.floor(Math.random()*pal.length)]; return [
+    { x:0, y:0, w:1.3*u, h:.24*u, c }, { x:-.55*u, y:-.75*u, w:.24*u, h:1.4*u, c },
+    { x:-.5*u, y:.55*u, w:.18*u, h:.9*u, c:dark }, { x:.5*u, y:.55*u, w:.18*u, h:.9*u, c:dark } ]; }
+  if(kind === 'box') return [ { x:0, y:0, w:1.2*u, h:1*u, c:'#b3b3b3' } ];
+  return [ { x:0, y:0, w:.9*u, h:2.4*u, c:'#8a8a8a' } ]; // locker
+}
+function spawnOne(){
+  const { W, u } = intro, r = Math.random(), kind = r < .3 ? 'desk' : r < .8 ? 'chair' : r < .9 ? 'box' : 'locker';
+  const x = W*(.5 + (Math.random()-.5)*.56), y = -u*(2.5 + Math.random()*2.5), specs = furniture(kind, u), M = intro.M;
+  let b;
+  if(M){
+    const parts = specs.map(p => M.Bodies.rectangle(x+p.x, y+p.y, p.w, p.h, { render:{ fillStyle:p.c } }));
+    b = parts.length > 1 ? M.Body.create({ parts, friction:.7, restitution:.12, frictionAir:.004 }) : parts[0];
+    b.friction = .7; b.restitution = .12;
+    M.Body.setAngle(b, rand(-.8,.8)); M.Body.setAngularVelocity(b, rand(-.05,.05)); M.Body.setVelocity(b, { x:rand(-1.5,1.5), y:rand(0,3) });
+    M.Composite.add(intro.engine.world, b);
+  }else{ // Matter.js が読めない時の簡易物理
+    let maxY = -1e9; specs.forEach(p => { maxY = Math.max(maxY, p.y+p.h/2); });
+    b = { mini:true, x, y, vx:rand(-1,1), vy:0, a:rand(-.8,.8), va:rand(-.05,.05), bottom:maxY, stack:(intro.bodies.length%4)*u*.5*Math.random(),
+          parts:specs.map(p => ({ lx:p.x, ly:p.y, w:p.w, h:p.h, vertices:[{},{},{},{}], render:{ fillStyle:p.c } })) };
+  }
+  intro.bodies.push(b); intro.spawned++;
+}
+function miniStep(b){
+  if(!intro.exploded){
+    b.vy += .8; b.x += b.vx; b.y += b.vy; b.a += b.va;
+    const rest = intro.floorY - b.bottom - b.stack;
+    if(b.y > rest){ b.y = rest; b.vy *= -.2; b.vx *= .7; b.va *= .6; }
+  }else{ b.vy += .25; b.x += b.vx; b.y += b.vy; b.a += b.va; }
+  const c = Math.cos(b.a), s = Math.sin(b.a);
+  for(const p of b.parts){
+    const hw = p.w/2, hh = p.h/2;
+    [[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]].forEach((q,i) => {
+      const lx = p.lx + q[0], ly = p.ly + q[1];
+      p.vertices[i].x = b.x + lx*c - ly*s; p.vertices[i].y = b.y + lx*s + ly*c;
     });
+  }
+}
+function drawParts(b){ return b.mini ? b.parts : (b.parts.length > 1 ? b.parts.slice(1) : b.parts); }
 
-    // モーダル操作関数
-    function openModal(title, videoUrl) {
-      document.getElementById('modalTitle').innerText = title;
-      const video = document.getElementById('modalVideo');
-      video.src = videoUrl;
-      document.getElementById('videoModal').style.display = 'flex';
+function introInit(qrKey){
+  intro.qrKey = qrKey; intro.ctx = $('#introCanvas').getContext('2d'); introResize();
+  const { W, H } = intro;
+  intro.u = clamp(Math.min(W, H*1.2)/9, 38, 112); intro.floorY = H*.95;
+  intro.short = !!qrKey && CONFIG.qrIntro === 'short';
+  intro.N = intro.short ? 12 : Math.round(clamp(W/intro.u*1.5, 14, 22)); intro.gap = intro.short ? 75 : 130;
+  const M = window.Matter; intro.M = M || null;
+  if(M){
+    intro.engine = M.Engine.create({ positionIterations:8, velocityIterations:6 }); intro.engine.gravity.y = 1.1;
+    intro.walls = [ M.Bodies.rectangle(W/2, intro.floorY+60, W*4, 120, { isStatic:true, friction:.9 }),
+                    M.Bodies.rectangle(-60, H/2, 120, H*6, { isStatic:true }), M.Bodies.rectangle(W+60, H/2, 120, H*6, { isStatic:true }) ];
+    M.Composite.add(intro.engine.world, intro.walls);
+  }
+  intro.t0 = performance.now();
+  introMsg.textContent = '';
+  introEl.addEventListener('pointerdown', e => { if(intro.ready && !intro.exploded) explode(e.clientX, e.clientY); });
+}
+function explode(px, py){
+  if(intro.exploded) return;
+  const now = performance.now(); intro.exploded = true; intro.exT = now; intro.ox = px; intro.oy = py;
+  const { W, H, M } = intro;
+  if(M){ M.Composite.remove(intro.engine.world, intro.walls); intro.engine.gravity.y = .22; }
+  const boost = W > 700 ? 1.3 : 1;
+  for(const b of intro.bodies){
+    if(b.mini){
+      const dx = b.x-px, dy = b.y-py, d = Math.hypot(dx,dy) || 1, sp = rand(26,50)*boost;
+      b.vx = dx/d*sp + rand(-4,4); b.vy = dy/d*sp + rand(-4,4) - 6; b.va = rand(-.5,.5);
+    }else{
+      b.parts.forEach(p => { p.collisionFilter.mask = 0; });
+      const dx = b.position.x-px, dy = b.position.y-py, d = Math.hypot(dx,dy) || 1, sp = rand(26,50)*boost;
+      M.Body.setVelocity(b, { x:dx/d*sp + rand(-4,4), y:dy/d*sp + rand(-4,4) - 6 });
+      M.Body.setAngularVelocity(b, rand(-.5,.5));
     }
-
-    function closeModal() {
-      const video = document.getElementById('modalVideo');
-      video.pause();
-      document.getElementById('videoModal').style.display = 'none';
+  }
+  intro.maxR = Math.hypot(Math.max(px, W-px), Math.max(py, H-py)) + 90;
+  intro.rings.push({ t0:now });
+  for(let i=0;i<80;i++){ const a = Math.random()*TAU, s = rand(8,32); intro.parts.push({ x:px, y:py, vx:Math.cos(a)*s, vy:Math.sin(a)*s, r:rand(0,TAU), vr:rand(-.4,.4), s:rand(3,11), c:Math.random()<.5 ? '#fff' : '#b3b3b3' }); }
+  $('#introUI').classList.add('gone'); $('#flash').classList.add('go');
+  if(!RM){ const app = $('#app'); app.classList.remove('shake'); void app.offsetWidth; app.classList.add('shake'); setTimeout(() => app.classList.remove('shake'), 620); }
+  setTimeout(startReveal, 120);
+}
+function startReveal(){
+  if(intro.qrKey){ selectItem(intro.qrKey, { delayOpen:true, dur:3600, ease:easeInOutCubic }); }
+  else { const h = homeView(); flyTo(h.x, h.y, h.s, { dur:2400, ease:easeOutCubic, bump:0 }); }
+  if(!intro.qrKey){ const hint = $('#hint'); setTimeout(() => { hint.classList.add('show'); setTimeout(() => hint.classList.remove('show'), 7000); }, 2400); }
+}
+function finishIntro(){
+  intro.active = false; introEl.style.display = 'none'; document.body.classList.add('ready');
+}
+function introTick(now, dt){
+  const { W, H, dpr, ctx, M } = intro;
+  if(!intro.exploded){
+    while(intro.spawned < intro.N && now - intro.t0 >= intro.spawned*intro.gap) spawnOne();
+    if(!intro.ready){
+      const pct = Math.min(99, Math.round(intro.spawned/intro.N*100));
+      introMsg.textContent = (intro.qrKey ? '該当する手がかりを検索しています…' : '現場を再構成しています…') + ' ' + pct + '%';
+      if(intro.spawned >= intro.N && now - intro.t0 >= intro.N*intro.gap + (intro.short ? 900 : 1300)){
+        intro.ready = true; introMsg.textContent = intro.qrKey ? '手がかりを開きます' : '画面をタップして調査を開始'; introMsg.classList.add('tap');
+        if(intro.qrKey) setTimeout(() => explode(W/2, H*.8), 250);
+      }
     }
+  }
+  if(M){
+    M.Engine.update(intro.engine, Math.min(dt || 16.7, 33));
+    if(!intro.exploded) for(const b of intro.bodies){ const v = b.velocity, sp = Math.hypot(v.x,v.y); if(sp > 22) M.Body.setVelocity(b, { x:v.x*22/sp, y:v.y*22/sp }); }
+  }else for(const b of intro.bodies) miniStep(b);
 
-    // マスク（ホイール）ズーム対応
-    elem.parentElement.addEventListener('wheel', panzoom.zoomWithWheel);
-  </script>
+  // 描画
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+  ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(2, intro.u*.04); ctx.strokeStyle = '#141414';
+  for(const b of intro.bodies){
+    for(const p of drawParts(b)){
+      ctx.beginPath(); p.vertices.forEach((v,i) => i ? ctx.lineTo(v.x,v.y) : ctx.moveTo(v.x,v.y)); ctx.closePath();
+      ctx.fillStyle = p.render.fillStyle; ctx.fill(); ctx.stroke();
+    }
+  }
+  if(intro.exploded){
+    const age = (now - intro.exT)/1000, a = clamp(age/1.0, 0, 1), R = easeOutCubic(a)*intro.maxR;
+    // 壁紙が爆心地から剥がれていく
+    if(a < 1){
+      const m = `radial-gradient(circle at ${intro.ox}px ${intro.oy}px, transparent ${R}px, #000 ${R+70}px)`;
+      introBg.style.webkitMaskImage = m; introBg.style.maskImage = m;
+    }else introBg.style.display = 'none';
+    if(a < 1){ ctx.strokeStyle = `rgba(255,255,255,${(1-a)*.9})`; ctx.lineWidth = 26*(1-a)+2; ctx.beginPath(); ctx.arc(intro.ox, intro.oy, R+30, 0, TAU); ctx.stroke(); }
+    for(const p of intro.parts){
+      p.x += p.vx; p.y += p.vy; p.vy += .5; p.vx *= .985; p.r += p.vr;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r); ctx.globalAlpha = clamp(1-age/1.3, 0, 1); ctx.fillStyle = p.c; ctx.fillRect(-p.s/2, -p.s/2, p.s, p.s*.6); ctx.restore();
+    }
+    if(age > 2.6) finishIntro();
+  }
+}
 
+/* =====================================================================
+   8. メインループ
+   ===================================================================== */
+let lastNow = performance.now(), frameN = 0, lastCam = 0, lastDos = 0;
+function tick(now){
+  requestAnimationFrame(tick);
+  const dt = Math.min(now - lastNow, 50); lastNow = now; frameN++;
+  const t = now/1000;
+  if(flight) flight.step(now);
+  for(const f of floaters) stepFloat(f, t);
+  updateStrings(t);
+
+  if(frameN % 3 === 0){
+    blobs.forEach(b => b.el.setAttribute('d', blobD(b, t)));
+    for(const d of dust){ d.x += d.vx*3; d.y += d.vy*3; if(d.y < -10) d.y = BOARD+10; if(d.x < -10) d.x = BOARD+10; if(d.x > BOARD+10) d.x = -10; d.el.setAttribute('cx', d.x.toFixed(1)); d.el.setAttribute('cy', d.y.toFixed(1)); }
+  }
+  if(frameN % 8 === 0){
+    const dms = document.querySelectorAll('.dm');
+    dms.forEach((m,i) => m.setAttribute('scale', (7 + 6*Math.sin(t*.7 + i*2.1)).toFixed(2)));
+    const c = cam.center(); $('#hudCoord').textContent = `X ${P2(Math.round(c.x)).padStart(4,'0')} Y ${P2(Math.round(c.y)).padStart(4,'0')} ×${c.s.toFixed(2)}`;
+  }
+  if(camMode === 'canvas' && now - lastCam > 41){ lastCam = now; drawCam(t); }
+  const st = camStamp(); if(st !== lastStamp){ lastStamp = st; camTs.textContent = st; }
+  if(dosCanvas && now - lastDos > 66){
+    lastDos = now; const g = dosCanvas.getContext('2d');
+    if(dosMirror) g.drawImage(camCanvas, 0, 0);
+    else{
+      const id = g.createImageData(320,180), d = id.data;
+      for(let i=0;i<d.length;i+=4){ const v = Math.random()*110|0; d[i] = d[i+1] = d[i+2] = v; d[i+3] = 255; }
+      g.putImageData(id,0,0); g.fillStyle = 'rgba(255,255,255,.1)'; g.fillRect(0, (t*50)%180, 320, 12);
+      g.fillStyle = '#fff'; g.font = '700 17px monospace'; g.textAlign = 'center'; g.fillText('映像 未登録', 160, 92);
+    }
+  }
+  if(intro.active) introTick(now, dt);
+}
+function blobD(b, t){
+  const n = 9, pts = [];
+  for(let i=0;i<n;i++){
+    const a = i/n*TAU, r = b.r*(1 + .16*Math.sin(t*.35 + b.s + i*1.9) + .09*Math.sin(t*.61 + b.s*2 + i*3.1));
+    pts.push([b.cx + Math.cos(a)*r, b.cy + Math.sin(a)*r]);
+  }
+  const mid = (p,q) => [(p[0]+q[0])/2, (p[1]+q[1])/2], m0 = mid(pts[n-1], pts[0]);
+  let d = `M${m0[0].toFixed(0)} ${m0[1].toFixed(0)}`;
+  for(let i=0;i<n;i++){ const p = pts[i], m = mid(p, pts[(i+1)%n]); d += `Q${p[0].toFixed(0)} ${p[1].toFixed(0)} ${m[0].toFixed(0)} ${m[1].toFixed(0)}`; }
+  return d + 'Z';
+}
+
+addEventListener('resize', () => {
+  updateLimits(); pz.setOptions({ minScale:limits.min, maxScale:limits.max });
+  if(intro.active){ introResize(); intro.W = innerWidth; intro.H = innerHeight; if(!intro.exploded){ const h = homeView(); cam.view(h.x, h.y, h.s*2.3); } }
+});
+
+/* =====================================================================
+   9. 起動
+   ===================================================================== */
+(function boot(){
+  const qrKey = resolveKey(params.get('item'));
+  const h = homeView();
+  cam.view(h.x, h.y, h.s*2.3);          // 導入中は盤面を大きく寄せておき、爆発と同時に引いて空間を広げる
+  if(qrKey && CONFIG.qrIntro === 'none'){
+    introEl.style.display = 'none'; intro.active = false; document.body.classList.add('ready');
+    cam.view(h.x, h.y, h.s); selectItem(qrKey, { delayOpen:true, dur:2600 });
+  }else introInit(qrKey);
+  requestAnimationFrame(tick);
+})();
+
+})();
+</script>
 </body>
 </html>
