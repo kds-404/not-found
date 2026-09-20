@@ -55,7 +55,7 @@ html,body{margin:0;height:100%;background:#262626;overflow:hidden;overscroll-beh
 .txt .up{font-size:1.16em;font-weight:800}
 
 /* 白昼夢ロゴ（ここは書き出したロゴ画像に差し替え可: CONFIG.logoImage） */
-.lgw{z-index:10}
+.lgw{z-index:10;pointer-events: none;}
 .logo{position:relative;display:block;font:800 calc(96px*var(--k))/1 var(--serif);color:#fff;letter-spacing:-.05em;white-space:nowrap;padding:.06em .1em .02em}
 .logo img{display:block;height:calc(120px*var(--k));width:auto}
 .logo i{display:inline-block;font-style:normal;transform-origin:50% 60%}
@@ -89,10 +89,15 @@ html,body{margin:0;height:100%;background:#262626;overflow:hidden;overscroll-beh
 
 /* 証拠カード（#001…） */
 .card{width:calc(112px*var(--k));height:calc(158px*var(--k));background:var(--paper);box-shadow:0 8px 22px rgba(0,0,0,.42);cursor:pointer;z-index:2}
+.card::before{content:'';position:absolute;inset:-24px; /* カードの周囲24px分、透明なタップ判定領域を広げる */background:transparent;z-index:0;
+}
 .card .lab{position:absolute;left:calc(6px*var(--k));top:calc(4px*var(--k));font:500 calc(27px*var(--k))/1.1 var(--serif);color:#0d0d0d;z-index:2;white-space:nowrap}
 .card.victim .lab{left:calc(-14px*var(--k));top:calc(10px*var(--k))}
 .card .shp{position:absolute;z-index:1}
 .card .shp svg{display:block;width:100%;height:100%;overflow:visible}
+/* ★追加② */
+.card .pic{position:absolute;z-index:1;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-drag:none}
+.card.victim .pic{left:9%;top:24%;width:82%;height:68%}   /* 被害者カード: 写真の枠 */
 .committee{cursor:pointer;z-index:2;width:calc(196px*var(--k));height:calc(202px*var(--k))}
 .committee .sq{position:absolute;inset:0;background:#f00;box-shadow:0 8px 26px rgba(0,0,0,.4)}
 .committee .ct{position:absolute;left:calc(-38px*var(--k));top:calc(-46px*var(--k));font:800 calc(24px*var(--k))/1.35 var(--serif);color:#fff;white-space:nowrap;letter-spacing:.03em}
@@ -104,13 +109,37 @@ html,body{margin:0;height:100%;background:#262626;overflow:hidden;overscroll-beh
 /* 監視カメラ */
 .cam{width:calc(317px*var(--k));height:calc(210px*var(--k));background:#1a1464;overflow:visible;cursor:pointer;z-index:2}
 .cam .scr{position:absolute;inset:0;overflow:hidden;isolation:isolate;box-shadow:0 10px 30px rgba(0,0,0,.5)}
-.cam canvas,.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.15) brightness(1.05)}
+.cam canvas,.cam video,.cam .camimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.15) brightness(1.05)}
 .cam video{opacity:0;transition:opacity .4s}
 .cam video.on{opacity:1}
 .cam .tint{position:absolute;inset:0;background:#1c1478;mix-blend-mode:color;opacity:.9}
 .cam .scan{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.24) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
 .cam .roll{position:absolute;left:0;right:0;height:22%;top:-25%;background:linear-gradient(transparent,rgba(255,255,255,.1),transparent);animation:roll 5.5s linear infinite}
 @keyframes roll{to{top:110%}}
+/* ★追加③: 電波が乱れるグリッチ（盤面のモニター / ポップアップ共通） */
+.cam .camimg{display:block}
+.cam .scr.is-glitching,.dmedia.is-glitching{--gl:.52s}   /* JSの CAM_FX.glitchMs に合わせる */
+.cam .scr.is-glitching .camimg,.dmedia.is-glitching canvas{animation:camShift var(--gl) steps(1,end) 1}
+.cam .scr.is-glitching::before,.dmedia.is-glitching::before{         /* ノイズ */
+  content:'';position:absolute;inset:0;z-index:4;pointer-events:none;mix-blend-mode:screen;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/><feComponentTransfer><feFuncA type='linear' slope='1.4'/></feComponentTransfer></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  animation:camNoise var(--gl) steps(1,end) 1}
+.cam .scr.is-glitching::after,.dmedia.is-glitching::after{           /* 走る横帯（白・ピンク・シアン） */
+  content:'';position:absolute;left:-5%;right:-5%;top:0;height:100%;z-index:5;pointer-events:none;mix-blend-mode:screen;
+  background:linear-gradient(180deg,transparent 0 9%,rgba(255,255,255,.85) 9% 11%,transparent 11% 38%,rgba(255,30,90,.75) 38% 44%,transparent 44% 63%,rgba(0,255,240,.7) 63% 67%,transparent 67% 84%,rgba(255,255,255,.6) 84% 85.5%,transparent 85.5%);
+  animation:camBars var(--gl) steps(1,end) 1}
+@keyframes camShift{   /* 画像本体のズレ・反転・明滅 */
+  0%{transform:translate(-3%,0) skewX(7deg);filter:contrast(2.2) brightness(1.7)}
+  12%{transform:translate(4%,-2%) scale(1.06);filter:invert(1) contrast(1.4)}
+  24%{transform:translate(-5%,1%) skewX(-9deg);filter:contrast(3) brightness(.6)}
+  38%{transform:translate(2%,0) scaleY(1.12);filter:hue-rotate(90deg) contrast(1.8) brightness(1.5)}
+  52%{transform:translate(-2%,2%);filter:invert(1) brightness(1.2)}
+  68%{transform:translate(1%,0) skewX(3deg);filter:contrast(1.6)}
+  84%{transform:translate(-1%,0);filter:brightness(1.4)}
+  100%{transform:none}}
+@keyframes camNoise{0%{opacity:.95;background-position:0 0}18%{opacity:.5;background-position:-70px 40px}36%{opacity:.9;background-position:50px -60px}55%{opacity:.35;background-position:-30px -20px}75%{opacity:.7;background-position:80px 30px}100%{opacity:0}}
+@keyframes camBars{0%{transform:translate(4%,0)}14%{transform:translate(-6%,-8%)}30%{transform:translate(5%,10%)}47%{transform:translate(-3%,-22%)}64%{transform:translate(6%,14%)}80%{transform:translate(-4%,3%)}100%{transform:translate(0,0);opacity:0}}
+/*ここまで*/
 .cam .lbl{position:absolute;left:calc(14px*var(--k));top:calc(18px*var(--k));font:500 calc(26px*var(--k))/1 var(--serif);color:#fff;letter-spacing:.06em;text-shadow:0 0 6px rgba(0,0,0,.7)}
 .cam .cid{position:absolute;left:calc(22px*var(--k));bottom:calc(14px*var(--k));font:400 calc(21px*var(--k))/1 var(--sans);color:#fff;letter-spacing:.06em;text-shadow:0 0 5px rgba(0,0,0,.7)}
 .cam .ts{position:absolute;right:calc(18px*var(--k));bottom:calc(14px*var(--k));font:400 calc(16px*var(--k))/1 var(--sans);color:#fff;letter-spacing:.04em;text-shadow:0 0 5px rgba(0,0,0,.7)}
@@ -281,6 +310,25 @@ const CONFIG = {
   logoImage: 'media/logo.gif',        // 例: 'media/logo.svg'。
   qrIntro: 'short',     
 };
+
+/* ★追加①: イントロで落下する画像（透過PNG）*/
+const INTRO_TEXTURES = ['media/intro01.png', 'media/intro02.png', 'media/intro03.png'];
+const INTRO_TEX = {
+  order: 'random',   // 'random'=ランダム / 'cycle'=配列の順に繰り返し
+  ratio: 1,          // 画像を使う確率 0〜1（1=全部画像 / .6=6割が画像で残りは従来の机・椅子）
+  size:  2.0,        // 画像の長辺の大きさ（単位 u ≒ 画面幅/9）
+  hit:   .7,         // 当たり判定の縮小率（透明な余白ぶん小さくして、浮いて見えるのを防ぐ）
+};
+
+/* ★追加③: 監視カメラ画像。添字がそのまま camId（0=通常 / 1〜10=異変） */
+const CAM_IMAGES = Array.from({ length: 11 }, (_, i) => `media/cam_${String(i).padStart(2, '0')}.jpg`);
+const CAM_FX = {
+  glitchMs: 520,        // グリッチの長さ(ms)。画像の差し替えはその45%地点
+  auto: true,           // true=異変をランダムに自動発生
+  every: [12, 30],      // 次の異変までの待ち時間(秒) [最小, 最大]
+  hold:  [3, 8],        // 異変を表示し続ける秒数 → その後 cam_00 に戻る
+};
+const CAM_TRIGGER = { };   // 任意: 手がかりを開いた時に出す異変。例 { '001':3, '007':5 }
 
 // URL:  ?item=cam1 / ?item=001 … / ?item=victim / ?item=committee
 const META = {
@@ -487,6 +535,13 @@ function shapeMarkup(color){
   return `<svg viewBox="0 0 200 200" fill="${color}" style="transform:rotate(${rr(0,360).toFixed(0)}deg)">${inner}</svg>`;
 }
 const PALETTE = shuffle(['#0000ff','#f7941d','#29abe2','#ff00ff','#ffff00','#00ff00','#39b54a','#93278f']);
+/* ★追加②: カード上に画像を置く小道具 */
+function makePic(src, css){
+  const im = mk('img', 'pic'); im.src = src; im.alt = ''; im.draggable = false; im.decoding = 'async';
+  if(css) im.style.cssText = css;
+  im.addEventListener('error', () => im.remove());     // 読み込み失敗時は何も出さない
+  return im;
+}
 const CARD_POS = [['009',152,387],['007',1000,495],['004',1754,597],['008',377,945],['006',137,1285],['002',1526,1156],['001',1703,1535],['003',618,1693]];
 CARD_POS.forEach((c,i) => {
   const el = mk('div','card'); el.dataset.key = c[0];
@@ -495,12 +550,15 @@ CARD_POS.forEach((c,i) => {
   const dx = rr(-70,90), dy = rr(12,120);
   const shp = mk('div','shp', shapeMarkup(PALETTE[i]));
   shp.style.cssText = `width:${S}px;height:${S}px;left:${W/2 + dx*K - S/2}px;top:${H/2 + dy*K - S/2}px`;
-  el.appendChild(shp);
+  // el.appendChild(shp);
+  const imgSrc = META[c[0]] && META[c[0]].image;                  // ★変更: image があれば図形の代わりに画像
+  if(imgSrc) el.appendChild(makePic(imgSrc, shp.style.cssText)); else el.appendChild(shp);
   addFloat(c[0], el, { x:c[1], y:c[2], r:rr(-5,5), rj:3, jit:80, pin:[dx*K + rr(-12,12)*K, dy*K + rr(-12,12)*K], ext:330, foc:[dx*K*.5, dy*K*.5] });
 });
 { // 被害者
   const el = mk('div','card victim'); el.dataset.key = 'victim';
   el.innerHTML = '<span class="lab">被害者</span>';
+  if(META.victim.image) el.appendChild(makePic(META.victim.image));   // ★追加
   addFloat('victim', el, { x:760, y:1055, r:0, rj:3, jit:18, ext:300, pin:[0,0], amp:.8 });
 }
 { // 調査委員會（赤い正方形）
@@ -510,12 +568,12 @@ CARD_POS.forEach((c,i) => {
 }
 
 /* --- 監視カメラ（盤面に固定配置され、常時ループ再生） --- */
-let camVideo, camCanvas, camCtx, camTs;
+let camVideo, camCanvas, camCtx, camTs, camImgEl, camCur = -1, camSwapT = 0, camGlitchT = 0, camAutoT = 0;   // ★camImgEl 以降を追加
 {
   const el = mk('div','cam'); el.dataset.key = 'cam1';
-  el.innerHTML = '<div class="scr"><canvas width="320" height="180"></canvas><video muted loop playsinline autoplay preload="auto"></video><div class="tint"></div><div class="scan"></div><div class="roll"></div>'
+  el.innerHTML = '<div class="scr"><canvas width="320" height="180"></canvas><video muted loop playsinline autoplay preload="auto"></video><img class="camimg" alt=""><div class="tint"></div><div class="scan"></div><div class="roll"></div>'
     + '<span class="lbl">監視カメラ</span><span class="cid">CAM01</span><span class="ts">2026.10.08 18:29:05</span></div><i class="rec"></i>';
-  camCanvas = el.querySelector('canvas'); camVideo = el.querySelector('video'); camTs = el.querySelector('.ts');
+  camCanvas = el.querySelector('canvas'); camVideo = el.querySelector('video'); camTs = el.querySelector('.ts'); camImgEl = el.querySelector('.camimg');   // ★追加
   camVideo.muted = true; camVideo.setAttribute('muted',''); camVideo.playsInline = true;
   camCtx = camCanvas.getContext('2d');
   addFloat('cam1', el, { x:575, y:623, r:5.7, rj:2, jit:22, amp:.55, ampR:.5, ext:540 });
@@ -605,6 +663,13 @@ window.addEventListener('load', measure);
 let camMode = 'canvas';
 function initCamFeed(){
   camVideo.addEventListener('playing', () => camVideo.classList.add('on'));
+  if(CAM_IMAGES.length){                                   // ★追加ここから: cam_00 が初期表示
+    camMode = 'image'; camCur = 0; camImgEl.src = CAM_IMAGES[0];
+    camImgEl.addEventListener('load', () => { camImgEl.style.visibility = ''; camMode = 'image'; });
+    camImgEl.addEventListener('error', () => { camImgEl.style.visibility = 'hidden'; camMode = 'canvas'; });   // 失敗時は従来の疑似映像
+    CAM_IMAGES.forEach(u => { new Image().src = u; });     // 先読み
+    return;
+  }                                                        // ★追加ここまで
   if(CONFIG.cameraVideo){
     camMode = 'video';
     camVideo.src = CONFIG.cameraVideo;
@@ -663,6 +728,34 @@ let lastStamp = '';
 function camStamp(){
   const d = new Date(camBase + Math.floor((performance.now()-camT0)/1000)*1000);
   return `${d.getUTCFullYear()}.${P2(d.getUTCMonth()+1)}.${P2(d.getUTCDate())} ${P2(d.getUTCHours())}:${P2(d.getUTCMinutes())}:${P2(d.getUTCSeconds())}`;
+}
+/* ★追加③: 画像切り替え＋グリッチ */
+function switchCamImage(camId, o = {}){
+  if(!CAM_IMAGES.length || !camImgEl) return;
+  const id = clamp(parseInt(camId, 10) || 0, 0, CAM_IMAGES.length - 1);
+  if(id === camCur && !o.force) return;
+  const dur = RM ? 0 : (o.glitchMs != null ? o.glitchMs : CAM_FX.glitchMs);   // reduced-motion時はグリッチなしで即切替
+  const boxes = [camImgEl.parentNode, dMedia];             // 盤面のモニター と ポップアップ内のモニター
+  clearTimeout(camSwapT); clearTimeout(camGlitchT);
+  const swap = () => { camImgEl.src = CAM_IMAGES[id]; camCur = id; };
+  if(dur <= 0){ swap(); return; }
+  boxes.forEach(b => { b.classList.remove('is-glitching'); void b.offsetWidth; b.classList.add('is-glitching'); });
+  camSwapT = setTimeout(swap, dur*.45);                    // ノイズが最大の瞬間に画像を差し替える
+  camGlitchT = setTimeout(() => boxes.forEach(b => b.classList.remove('is-glitching')), dur);
+}
+window.switchCamImage = switchCamImage;   // コンソールから switchCamImage(3) で確認できるように公開
+function camAutoLoop(){
+  if(!CAM_FX.auto || CAM_IMAGES.length < 2) return;
+  camAutoT = setTimeout(() => {
+    if(document.hidden || intro.active){ camAutoLoop(); return; }
+    switchCamImage(1 + Math.floor(Math.random()*(CAM_IMAGES.length - 1)));   // 1〜10 からランダム
+    camAutoT = setTimeout(() => { switchCamImage(0); camAutoLoop(); }, rand(...CAM_FX.hold)*1000);
+  }, rand(...CAM_FX.every)*1000);
+}
+function drawCover(g, src, w, h){                          // <img> を object-fit:cover 相当で Canvas に描く
+  const sw = src.naturalWidth, sh = src.naturalHeight; if(!sw || !sh) return;
+  const k = Math.max(w/sw, h/sh);
+  g.drawImage(src, (w - sw*k)/2, (h - sh*k)/2, sw*k, sh*k);
 }
 initCamFeed();
 
@@ -804,6 +897,7 @@ function focusView(key){
 }
 function selectItem(key, o={}){
   if(!byKey[key] || !META[key]) return Promise.resolve(false);
+  if(CAM_TRIGGER[key] != null) switchCamImage(CAM_TRIGGER[key]);   // ★追加
   const v = focusView(key);
   if(!o.delayOpen) openDossier(key);
   const p = flyTo(v.x, v.y, v.s, { ax:v.ax, ay:v.ay, dur:o.dur || 1100, ease:o.ease });
@@ -923,7 +1017,7 @@ function furniture(kind, u){
 }
 function spawnOne(){
   const { W, u } = intro, r = Math.random(), kind = r < .3 ? 'desk' : r < .8 ? 'chair' : r < .9 ? 'box' : 'locker';
-  const x = W*(.5 + (Math.random()-.5)*.56), y = -u*(2.5 + Math.random()*2.5), specs = furniture(kind, u), M = intro.M;
+  const x = W*(.5 + (Math.random()-.5)*.56), y = -u*(2.5 + Math.random()*2.5), M = intro.M, tex = pickIntroTexture(), specs = tex ? texSpecs(tex) : furniture(kind, u);
   let b;
   if(M){
     const parts = specs.map(p => M.Bodies.rectangle(x+p.x, y+p.y, p.w, p.h, { render:{ fillStyle:p.c } }));
@@ -936,6 +1030,7 @@ function spawnOne(){
     b = { mini:true, x, y, vx:rand(-1,1), vy:0, a:rand(-.8,.8), va:rand(-.05,.05), bottom:maxY, stack:(intro.bodies.length%4)*u*.5*Math.random(),
           parts:specs.map(p => ({ lx:p.x, ly:p.y, w:p.w, h:p.h, vertices:[{},{},{},{}], render:{ fillStyle:p.c } })) };
   }
+  if(tex){ b.tex = tex.img; b.texW = tex.w; b.texH = tex.h; }      // ★追加
   intro.bodies.push(b); intro.spawned++;
 }
 function miniStep(b){
@@ -952,6 +1047,30 @@ function miniStep(b){
       p.vertices[i].x = b.x + lx*c - ly*s; p.vertices[i].y = b.y + lx*s + ly*c;
     });
   }
+}
+/* ★追加①: 画像テクスチャの先読みと生成補助 */
+const INTRO_IMGS = []; let introTexN = 0;
+function preloadIntroTextures(timeout = 4000){
+  const slots = new Array(INTRO_TEXTURES.length);
+  const jobs = INTRO_TEXTURES.map((src, i) => new Promise(res => {
+    const im = new Image();
+    im.onload = () => { slots[i] = im; res(); };
+    im.onerror = () => { console.warn('intro texture not found:', src); res(); };
+    im.src = src;
+  }));
+  return Promise.race([ Promise.all(jobs), new Promise(res => setTimeout(res, timeout)) ])
+    .then(() => { INTRO_IMGS.length = 0; slots.forEach(im => im && INTRO_IMGS.push(im)); });
+}
+function pickIntroTexture(){
+  if(!INTRO_IMGS.length || Math.random() >= INTRO_TEX.ratio) return null;
+  const im = INTRO_TEX.order === 'cycle' ? INTRO_IMGS[introTexN++ % INTRO_IMGS.length] : INTRO_IMGS[Math.floor(Math.random()*INTRO_IMGS.length)];
+  const k = INTRO_TEX.size * intro.u / Math.max(im.naturalWidth, im.naturalHeight);
+  return { img:im, w:im.naturalWidth*k, h:im.naturalHeight*k };
+}
+const texSpecs = t => [{ x:0, y:0, w:t.w*INTRO_TEX.hit, h:t.h*INTRO_TEX.hit, c:'#000' }];
+function drawTex(ctx, b){
+  const x = b.mini ? b.x : b.position.x, y = b.mini ? b.y : b.position.y, a = b.mini ? b.a : b.angle;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(a); ctx.drawImage(b.tex, -b.texW/2, -b.texH/2, b.texW, b.texH); ctx.restore();
 }
 function drawParts(b){ return b.mini ? b.parts : (b.parts.length > 1 ? b.parts.slice(1) : b.parts); }
 
@@ -1026,6 +1145,7 @@ function introTick(now, dt){
   ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
   ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(2, intro.u*.04); ctx.strokeStyle = '#141414';
   for(const b of intro.bodies){
+    if(b.tex){ drawTex(ctx, b); continue; }                            // ★追加
     for(const p of drawParts(b)){
       ctx.beginPath(); p.vertices.forEach((v,i) => i ? ctx.lineTo(v.x,v.y) : ctx.moveTo(v.x,v.y)); ctx.closePath();
       ctx.fillStyle = p.render.fillStyle; ctx.fill(); ctx.stroke();
@@ -1072,7 +1192,9 @@ function tick(now){
   const st = camStamp(); if(st !== lastStamp){ lastStamp = st; camTs.textContent = st; }
   if(dosCanvas && now - lastDos > 66){
     lastDos = now; const g = dosCanvas.getContext('2d');
-    if(dosMirror) g.drawImage(camCanvas, 0, 0);
+    if(dosMirror){
+      if(camMode === 'image') drawCover(g, camImgEl, dosCanvas.width, dosCanvas.height); else g.drawImage(camCanvas, 0, 0);
+}
     else{
       const id = g.createImageData(320,180), d = id.data;
       for(let i=0;i<d.length;i+=4){ const v = Math.random()*110|0; d[i] = d[i+1] = d[i+2] = v; d[i+3] = 255; }
@@ -1080,7 +1202,7 @@ function tick(now){
       g.fillStyle = '#fff'; g.font = '700 17px monospace'; g.textAlign = 'center'; g.fillText('NO DATA', 160, 92);
     }
   }
-  if(intro.active) introTick(now, dt);
+  if(intro.active && intro.ctx) introTick(now, dt);
 }
 function blobD(b, t){
   const n = 9, pts = [];
@@ -1109,7 +1231,11 @@ addEventListener('resize', () => {
   if(qrKey && CONFIG.qrIntro === 'none'){
     introEl.style.display = 'none'; intro.active = false; document.body.classList.add('ready');
     cam.view(h.x, h.y, h.s); selectItem(qrKey, { delayOpen:true, dur:2600 });
-  }else introInit(qrKey);
+  }else{                                                                // ★変更: プリロード完了後に開始
+    introMsg.textContent = '読み込み中…';
+    preloadIntroTextures().then(() => introInit(qrKey));
+  }
+  camAutoLoop();                                                        // ★追加（③の異変の自動発生）
   requestAnimationFrame(tick);
 })();
 
