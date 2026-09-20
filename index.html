@@ -449,6 +449,8 @@ const ri = (a,b) => Math.floor(rr(a, b+1));
 const pick = arr => arr[Math.floor(rnd()*arr.length)];
 const shuffle = arr => { const a = arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
 const rand = (a,b) => a + Math.random()*(b-a); // 演出用（毎回変わってよい乱数）
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
 /* =====================================================================
    2. 盤面の構築（イラレ案の座標 → 毎回ランダムに揺らして配置）
@@ -1318,6 +1320,12 @@ addEventListener('resize', () => {
   if(qrKey && CONFIG.qrIntro === 'none'){
     introEl.style.display = 'none'; intro.active = false; document.body.classList.add('ready');
     cam.view(h.x, h.y, h.s); selectItem(qrKey, { delayOpen:true, dur:2600 });
+    const dur = isMobile ? 0 : 2600;
+    const delay = isMobile ? 600 : 0;
+
+    setTimeout(() => {
+      selectItem(qrKey, { delayOpen:true, dur: dur });
+    }, delay);
   }else{                                                                // ★変更: プリロード完了後に開始
     introMsg.textContent = '読み込み中…';
     preloadIntroTextures().then(() => introInit(qrKey));
