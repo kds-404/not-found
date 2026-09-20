@@ -70,6 +70,10 @@ html,body{margin:0;height:100%;background:#262626;overflow:hidden;overscroll-beh
   50%{text-shadow:-6px 0 #f0f,6px 0 #0ff;transform:translateX(9px) skewX(-6deg);opacity:.7}
   100%{text-shadow:none;transform:none}}
 .toha{position:absolute;left:100%;bottom:.05em;margin-left:.12em;font:400 calc(40px*var(--k))/1 var(--serif);letter-spacing:.06em;color:#fff}
+.logo {
+  transform: scale(2.5); 
+  transform-origin: center center; /* 中央を中心に拡大 */
+}
 
 /* 大きな「桑沢」「桑澤」 */
 .big{font:800 calc(150px*var(--k))/1 var(--serif);color:#fff;white-space:nowrap;letter-spacing:-.08em;z-index:1}
@@ -223,15 +227,15 @@ body.ready #hud{opacity:1}
   <div id="fxFlick" class="fx"></div>
 
   <div id="hud">
-    <div id="hudTitle"><b>桑沢学園白昼夢 現象調査委員會</b>捜査ボード ／ 案件 2026.10.08</div>
+    <div id="hudTitle"><b>白昼夢現象調査委員会</b>捜査ボード ／ 2026.10.08</div>
     <div id="index"></div>
-    <div id="hint">ドラッグで探索 ／ ピンチ・ホイールで拡大縮小 ／ 手がかりをタップ</div>
+    <div id="hint">ドラッグで探索 ／ 手がかりをタップ</div>
     <div id="hudBtns">
       <span id="hudCoord">X 0000 Y 0000 ×1.00</span>
       <button class="hb" id="bHome" title="中心へ戻る" aria-label="中心へ戻る">中心</button>
       <button class="hb" id="bIndex" title="手がかり一覧" aria-label="手がかり一覧">索引</button>
-      <button class="hb" id="bIn" aria-label="拡大">＋</button>
-      <button class="hb" id="bOut" aria-label="縮小">－</button>
+      <!-- <button class="hb" id="bIn" aria-label="拡大">＋</button>
+      <button class="hb" id="bOut" aria-label="縮小">－</button> -->
     </div>
   </div>
 
@@ -251,7 +255,7 @@ body.ready #hud{opacity:1}
     <div id="introBg"></div>
     <canvas id="introCanvas"></canvas>
     <div id="introUI">
-      <div id="introTitle">桑沢学園白昼夢 現象調査委員會<small>SCENE RECONSTRUCTION</small></div>
+      <div id="introTitle">白昼夢現象調査委員会<small>SCENE RECONSTRUCTION</small></div>
       <div id="introMsg"></div>
     </div>
     <div id="flash"></div>
@@ -281,39 +285,39 @@ const CONFIG = {
 // URL:  ?item=cam1 / ?item=001 … / ?item=victim / ?item=committee   （?seed=123 で配置を固定）
 // video に mp4 を指定すると、ポップアップ内でその動画をループ再生します。
 const META = {
-  cam1: { tag:'CAM01', sub:'監視カメラ', title:'旧校舎 二階・東廊下',
-    body:'18時29分。廊下に人影はない。だが同時刻の音声には、三人分の足音が記録されていた。映像は毎回、同じ位置で一瞬だけ途切れる。',
-    note:'REC 2026.10.08 ／ 記録者：不明', video:'', poster:'' },
-  '001': { tag:'#001', sub:'発見物', title:'廊下の突き当たり',
-    body:'前日の巡回記録には存在しない。触れた者は全員、その日の夕方の記憶が曖昧になっている。',
-    note:'発見 16:42 ／ 回収：不可', video:'', poster:'' },
-  '002': { tag:'#002', sub:'発見物', title:'二年C組・黒板',
-    body:'貼られていた。丸いはずなのに、見る角度によって縁が四角く見えるという証言が七件。',
-    note:'発見 08:15 ／ 目撃者：7名', video:'', poster:'' },
-  '003': { tag:'#003', sub:'発見物', title:'階段の踊り場',
-    body:'立てかけてあった。運び出そうとした二名は、いずれも「同じ階を二度降りた」と述べている。',
-    note:'発見 17:03 ／ 運搬：失敗', video:'', poster:'' },
-  '004': { tag:'#004', sub:'発見物', title:'図書室・窓辺',
-    body:'辺の数を数えるたびに答えが変わる。現在の記録は「五」。次に数える者は、記録を見ないこと。',
-    note:'発見 14:20 ／ 計数：不安定', video:'', poster:'' },
-  '006': { tag:'#006', sub:'発見物', title:'非常口・誘導灯の下',
-    body:'夕方にだけ現れる。誰に尋ねても、朝には見たことがないと言う。夕方には全員が、前から知っていたと言う。',
-    note:'出現 18:00〜 ／ 消失：不明', video:'', poster:'' },
-  '007': { tag:'#007', sub:'発見物', title:'机の下',
-    body:'誰の持ち物でもない。持ち主を探した職員は、持ち主の顔を思い出せなかった。',
-    note:'発見 12:48 ／ 所有者：████', video:'', poster:'' },
-  '008': { tag:'#008', sub:'発見物', title:'化粧室・鏡の裏',
+  cam1: { tag:'CAM01', sub:'監視カメラ', title:'32教室',
+    body:'度々「現象」が報告されている教室。調査中は常に状態を記録し「現象」の発生に備えている。',
+    note:'REC 2026.10.01 - 2026.10.03', video:'', poster:'' },
+  '001': { tag:'#001', sub:'拾得物', title:'3階エレベーターホール',
+    body:'前日の巡回記録には存在しない。おそらく被害者のものだろう。',
+    note:'発見 16:42 ／ 回収済', video:'', poster:'' },
+  '002': { tag:'#002', sub:'現象記録', title:'2階図書館',
+    body:'本棚でこのような現象が複数件目撃されている。',
+    note:'確認 14:18 ／ 目撃者：7名', video:'', poster:'' },
+  '003': { tag:'#003', sub:'現象記録', title:'5階エレベーターホール',
+    body:'地震のような音と共に物体が動き出したという証言がある。',
+    note:'発見 10:46 ／ 撮影：某学生', video:'', poster:'' },
+  '004': { tag:'#004', sub:'遺失物', title:'某職員',
+    body:'某職員によると、授業で使用するUSBが盗まれたとのこと。',
+    note:'証言 12:56 ／ 計数：不安定', video:'', poster:'' },
+  '006': { tag:'#006', sub:'発見物', title:'7階学生ホール',
+    body:'夜間部の学生が発見。中のデータは消去されていたという。',
+    note:'発見 17:40 ／ 所有者：████', video:'', poster:'' },
+  '007': { tag:'#007', sub:'発見物', title:'3階男子トイレ',
+    body:'被害者のものと思われる████████が見つかった。',
+    note:'発見 19:56 ／ 調査中', video:'', poster:'' },
+  '008': { tag:'#008', sub:'発見物', title:'2号館4階テラス',
     body:'欠けている。欠けた部分がどこにあるのかは、まだ見つかっていない。',
     note:'発見 15:31 ／ 欠損：未回収', video:'', poster:'' },
-  '009': { tag:'#009', sub:'発見物', title:'体育館・壇上',
-    body:'半分だけが残っている。もう半分は、我々の中の誰かが持っているはずだ。',
-    note:'発見 07:55 ／ 照合：未実施', video:'', poster:'' },
-  victim: { tag:'被害者', sub:'', title:'氏名：████ ／ 所属：不明',
-    body:'最後の目撃は18:29。本人は「何も知らない」と繰り返している。だが、知っているはずのことを、知らない。',
-    note:'状態：観察中', video:'', poster:'' },
-  committee: { tag:'委員会', sub:'', title:'桑沢学園白昼夢 現象調査委員會',
-    body:'我々は調査を開始した。一体何が起こっているのか。原因は何か。条件は。──ここにある手がかりは、見るたびに位置を変える。',
-    note:'連絡：委員会室（存在しない部屋）', video:'', poster:'' },
+  '009': { tag:'#009', sub:'調査記録', title:'32教室',
+    body:'調査員が学校周辺で発生している現象について調査を開始した。',
+    note:'10月某日 ／ 調査員：████', video:'', poster:'' },
+  victim: { tag:'被害者', sub:'', title:'氏名：████',
+    body:'最後の目撃は15:12。調査中に現象に飲み込まれたとみられている。',
+    note:'状態：捜索中', video:'', poster:'' },
+  committee: { tag:'調査委員会', sub:'', title:'白昼夢現象調査委員会',
+    body:'近頃、桑沢周辺で巻き起こっている「白昼夢」の謎。我々は現象の原因を調べるべく、「白昼夢」の調査を開始した。',
+    note:'連絡先：03-46░1-▓2▒9', video:'', poster:'' },
 };
 const INDEX_ORDER = ['cam1','001','002','003','004','006','007','008','009','victim','committee'];
 const INDEX_LABEL = { cam1:'CAM01', victim:'被害者', committee:'委員会' };
@@ -386,7 +390,7 @@ function pinWorld(f){
   return { x: f.x + p[0]*c - p[1]*s, y: f.y + p[0]*s + p[1]*c };
 }
 
-/* --- 短文・キャプション（イラレ案の文言と位置） --- */
+/* --- 短文・キャプション（文言と位置） --- */
 const CAPS = [
   { k:'cap:know',  t:'知っているはずなのに、',   x:840,  y:125,  s:30, r:6,  j:60, pinF:[.46,.9] },
   { k:'cap:seen',  t:'見慣れているはずなのに、', x:1268, y:370,  s:32, r:3,  j:60, pinF:[.02,.95] },
@@ -452,7 +456,7 @@ LOGO_POS.forEach((p,i) => {
 /* --- 大きな桑沢 / 桑澤 / 小さな走り書き --- */
 addFloat('kuwa1', mk('div','big','<i>桑</i><i>沢</i>'), { x:1545, y:225, r:22, jit:40, rj:5, amp:1.3 });
 addFloat('kuwa2', mk('div','kuwa2','<b>桑</b><b>澤</b><small>くわさわ</small>'), { x:1315, y:1445, r:-2, jit:40, rj:5 });
-[['くわさわ',1285,533,-24],['はくちゅうむ',177,792,-58],['ひるのゆめ',1838,1440,-22],['さわ',560,1170,20]].forEach((s,i) => {
+[['くわさわ',1285,533,-24],['はくちゅうむ',177,792,-58],['ざわ',1838,1440,-22],['さわ',560,1170,20]].forEach((s,i) => {
   addFloat('scrib'+i, mk('div','scrib',s[0]), { x:s[1], y:s[2], r:s[3], jit:25, rj:10, ampR:3, amp:1.4 });
 });
 
@@ -533,7 +537,7 @@ for(let i=0;i<4;i++){
     d += rnd()<.5 ? `M${gx} ${gy}h${len}` : `M${gx} ${gy}v${len}`;
   }
   bgsvg.appendChild(svgEl('path', { d, fill:'none', stroke:'rgba(255,255,255,.075)', 'stroke-width':3 }));
-  ['LEVEL 0','SECTOR A-07','██-██','LEVEL 1?','出口なし','A-12','NOCLIP','SECTOR C-03','██-19','THE HABITABLE ZONE'].forEach(tx => {
+  ['LEVEL 0','SECTOR A-07','██-██','LEVEL 3?','ZONE404','32教室','NOCLIP','SECTOR P1','██-29','THE HABITABLE ZONE'].forEach(tx => {
     const t = svgEl('text', { x:rr(.05,.92)*BOARD, y:rr(.05,.95)*BOARD, fill:'rgba(255,255,255,.2)', 'font-size':22, 'font-family':'Share Tech Mono, monospace', 'letter-spacing':4 });
     t.textContent = tx; bgsvg.appendChild(t);
   });
@@ -870,7 +874,7 @@ addEventListener('pointercancel', e => { activePtrs.delete(e.pointerId); down = 
   $('#bIndex').addEventListener('click', () => idx.classList.toggle('open'));
   $('#bHome').addEventListener('click', () => { closeDossier(); const h = homeView(); flyTo(h.x, h.y, h.s, { dur:1500 }); });
   const zoomBy = f => { const c = cam.center(); flyTo(c.x, c.y, c.s*f, { dur:350, ease:easeOutCubic, bump:0 }); };
-  $('#bIn').addEventListener('click', () => zoomBy(1.5)); $('#bOut').addEventListener('click', () => zoomBy(1/1.5));
+  // $('#bIn').addEventListener('click', () => zoomBy(1.5)); $('#bOut').addEventListener('click', () => zoomBy(1/1.5));
 }
 
 /* =====================================================================
@@ -1007,9 +1011,9 @@ function introTick(now, dt){
     while(intro.spawned < intro.N && now - intro.t0 >= intro.spawned*intro.gap) spawnOne();
     if(!intro.ready){
       const pct = Math.min(99, Math.round(intro.spawned/intro.N*100));
-      introMsg.textContent = (intro.qrKey ? '該当する手がかりを検索しています…' : '現場を再構成しています…') + ' ' + pct + '%';
+      introMsg.textContent = (intro.qrKey ? '該当する手がかりを検索しています…' : 'ボードを再構成しています…') + ' ' + pct + '%';
       if(intro.spawned >= intro.N && now - intro.t0 >= intro.N*intro.gap + (intro.short ? 900 : 1300)){
-        intro.ready = true; introMsg.textContent = intro.qrKey ? '手がかりを開きます' : '画面をタップして調査を開始'; introMsg.classList.add('tap');
+        intro.ready = true; introMsg.textContent = intro.qrKey ? '調査ボードへのアクセスを許可します' : '画面をタップして調査を開始'; introMsg.classList.add('tap');
         if(intro.qrKey) setTimeout(() => explode(W/2, H*.8), 250);
       }
     }
@@ -1074,7 +1078,7 @@ function tick(now){
       const id = g.createImageData(320,180), d = id.data;
       for(let i=0;i<d.length;i+=4){ const v = Math.random()*110|0; d[i] = d[i+1] = d[i+2] = v; d[i+3] = 255; }
       g.putImageData(id,0,0); g.fillStyle = 'rgba(255,255,255,.1)'; g.fillRect(0, (t*50)%180, 320, 12);
-      g.fillStyle = '#fff'; g.font = '700 17px monospace'; g.textAlign = 'center'; g.fillText('映像 未登録', 160, 92);
+      g.fillStyle = '#fff'; g.font = '700 17px monospace'; g.textAlign = 'center'; g.fillText('NO DATA', 160, 92);
     }
   }
   if(intro.active) introTick(now, dt);
