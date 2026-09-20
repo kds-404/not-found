@@ -23,6 +23,7 @@
 }
 html,body{margin:0;height:100%;background:#262626;overflow:hidden;overscroll-behavior:none;
   -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;
+  -webkit-overflow-scrolling: touch;scroll-behavior: smooth;touch-action: manipulation;
   font-family:var(--serif);color:#fff}
 #app{position:fixed;inset:0;overflow:hidden}
 #app.shake{animation:shake .55s steps(1) 1}
@@ -30,6 +31,10 @@ html,body{margin:0;height:100%;background:#262626;overflow:hidden;overscroll-beh
   0%{transform:translate(0,0)}10%{transform:translate(-14px,9px)}20%{transform:translate(12px,-10px)}
   30%{transform:translate(-9px,-7px)}40%{transform:translate(8px,8px)}50%{transform:translate(-6px,4px)}
   60%{transform:translate(5px,-4px)}75%{transform:translate(-3px,2px)}90%{transform:translate(2px,-1px)}100%{transform:translate(0,0)}}
+
+img {-webkit-touch-callout: none;user-select: none;-webkit-user-drag: none;}
+
+.smooth-element {will-change: transform, opacity;transform: translateZ(0);}
 
 /* ---------- 盤面 ---------- */
 #viewport{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:grab;background:#2a2a2a}
@@ -307,7 +312,7 @@ body.ready #hud{opacity:1}
 const CONFIG = {
   BOARD: 3200,          // 盤面の一辺(px)。
   cameraVideo: '',      // 例: 'media/cam01.mp4'。空なら疑似ライブ映像(Canvas→<video>)を自動生成
-  logoImage: 'media/logo.gif',        // 例: 'media/logo.svg'。
+  logoImage: 'media/logo.png',        // 例: 'media/logo.svg'。
   qrIntro: 'short',     
 };
 
@@ -572,7 +577,7 @@ let camVideo, camCanvas, camCtx, camTs, camImgEl, camCur = -1, camSwapT = 0, cam
 {
   const el = mk('div','cam'); el.dataset.key = 'cam1';
   el.innerHTML = '<div class="scr"><canvas width="320" height="180"></canvas><video muted loop playsinline autoplay preload="auto"></video><img class="camimg" alt=""><div class="tint"></div><div class="scan"></div><div class="roll"></div>'
-    + '<span class="lbl">監視カメラ</span><span class="cid">CAM01</span><span class="ts">2026.10.08 18:29:05</span></div><i class="rec"></i>';
+    + '<span class="lbl">監視カメラ</span><span class="cid">CAM01</span><span class="ts"></span></div><i class="rec"></i>';
   camCanvas = el.querySelector('canvas'); camVideo = el.querySelector('video'); camTs = el.querySelector('.ts'); camImgEl = el.querySelector('.camimg');   // ★追加
   camVideo.muted = true; camVideo.setAttribute('muted',''); camVideo.playsInline = true;
   camCtx = camCanvas.getContext('2d');
@@ -723,11 +728,14 @@ function drawCam(t){
   for(let i=0;i<34;i++) g.fillRect(Math.random()*W|0, Math.random()*H|0, 1, 1);
   if(Math.random() < .03){ const y = Math.random()*(H-24)|0, h = 4 + Math.random()*20|0; g.drawImage(camCanvas, 0, y, W, h, (Math.random()*26-13)|0, y, W, h); }
 }
-const camBase = Date.UTC(2026,9,8,18,29,5), camT0 = performance.now();
+// const camBase = Date.UTC(2026,9,8,18,29,5), camT0 = performance.now();
 let lastStamp = '';
 function camStamp(){
-  const d = new Date(camBase + Math.floor((performance.now()-camT0)/1000)*1000);
-  return `${d.getUTCFullYear()}.${P2(d.getUTCMonth()+1)}.${P2(d.getUTCDate())} ${P2(d.getUTCHours())}:${P2(d.getUTCMinutes())}:${P2(d.getUTCSeconds())}`;
+  // 端末の設定に関わらず常に日本時間（UTC+9）の現在時刻を計算
+  const now = new Date();
+  const jst = new Date(now.getTime() + (9 * 60 + now.getTimezoneOffset()) * 60000);
+  
+  return `${jst.getFullYear()}.${P2(jst.getMonth()+1)}.${P2(jst.getDate())} ${P2(jst.getHours())}:${P2(jst.getMinutes())}:${P2(jst.getSeconds())}`;
 }
 /* ★追加③: 画像切り替え＋グリッチ */
 function switchCamImage(camId, o = {}){
@@ -806,11 +814,13 @@ function MiniPanzoom(el, parent, opts){
   };
 }
 
-// ズーム倍率を 1 に固定
+/* ズームの可否: 主入力が指(pointer:coarse)のタッチ端末 かつ 公式Panzoomが読めた時だけON */
+const mqTouch = matchMedia('(pointer: coarse)');
+const zoomOn = () => mqTouch.matches && !!window.Panzoom;
 const limits = { min: 1, max: 1 };
-function updateLimits() {
-  limits.min = 1;
-  limits.max = 1;
+function updateLimits(){
+  if(zoomOn()){ limits.min = Math.max(.1, Math.min(innerWidth, innerHeight)/BOARD*.75); limits.max = 3.2; }
+  else { limits.min = limits.max = 1; }
 }
 updateLimits();
 
@@ -820,12 +830,23 @@ const pz = window.Panzoom
       origin: '0 0', 
       canvas: true, 
       disableZoom: true, // ★公式Panzoomのズーム無効化
-      minScale: 1, 
-      maxScale: 1, 
+      minScale: limits.min,
+      maxScale: limits.max,
       cursor: 'grab', 
       animate: false 
     })
   : MiniPanzoom(board, viewport, { minScale: 1, maxScale: 1 });
+
+  // ★ここから追加（MiniPanzoom(...) の直後）
+function applyZoomMode(){
+  updateLimits();
+  pz.setOptions({ disableZoom: !zoomOn(), minScale: limits.min, maxScale: limits.max });
+  $('#hint').textContent = zoomOn()
+    ? 'ドラッグで探索 ／ ピンチで拡大縮小 ／ 手がかりをタップ'
+    : 'ドラッグで探索 ／ 手がかりをタップ';
+}
+applyZoomMode();
+mqTouch.addEventListener('change', applyZoomMode);
 
 // カメラ: 画面座標 = s * (盤面座標 + (x,y))   （transform-origin: 0 0）
 const cam = {
@@ -866,7 +887,9 @@ function flyTo(bx,by,s,o={}){
 let settleT = 0;
 viewport.addEventListener('wheel', e => {
   if(intro.active) return;
-  e.preventDefault(); cancelFlight(); pz.zoomWithWheel(e);
+  e.preventDefault(); cancelFlight();
+  if(!zoomOn()) return;
+  pz.zoomWithWheel(e);
   clearTimeout(settleT); settleT = setTimeout(settleBounds, 700);
 }, { passive:false });
 board.addEventListener('panzoomend', () => { clearTimeout(settleT); settleT = setTimeout(settleBounds, 250); });
@@ -876,7 +899,8 @@ function settleBounds(){
   const nx = clamp(c.x, -m, BOARD+m), ny = clamp(c.y, -m, BOARD+m);
   if(nx !== c.x || ny !== c.y) flyTo(nx, ny, c.s, { dur:800, ease:easeOutCubic, bump:0 });
 }
-document.addEventListener('gesturestart', e => e.preventDefault());
+['gesturestart','gesturechange','gestureend'].forEach(t =>
+  document.addEventListener(t, e => e.preventDefault(), { passive:false }));
 
 /* =====================================================================
    5. 手がかり選択 / 詳細ポップアップ
@@ -1217,7 +1241,7 @@ function blobD(b, t){
 }
 
 addEventListener('resize', () => {
-  updateLimits(); pz.setOptions({ minScale:limits.min, maxScale:limits.max });
+  applyZoomMode();
   if(intro.active){ introResize(); intro.W = innerWidth; intro.H = innerHeight; if(!intro.exploded){ const h = homeView(); cam.view(h.x, h.y, h.s*2.3); } }
 });
 
