@@ -247,11 +247,15 @@ body.ready #hud{opacity:1}
 #introBg {
   position: absolute;
   inset: 0;
-  background-size: 100% 100%;
-  background-position: center;
-  background-repeat: no-repeat;
-  /* SVGによる部屋の3Dパース表現（グレー系カラー） */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 600' preserveAspectRatio='none'%3E%3Crect width='1000' height='600' fill='%23f0f0f0'/%3E%3Cpolygon points='100,0 135,0 135,600 100,600' fill='%23d8d8d8'/%3E%3Cpolygon points='865,0 900,0 900,600 865,600' fill='%23e5e5e5'/%3E%3Cpolygon points='135,0 200,0 200,430 135,475' fill='%23cccccc'/%3E%3Cpolygon points='800,0 865,0 865,475 800,430' fill='%23e0e0e0'/%3E%3Crect x='200' y='0' width='600' height='430' fill='%23a3a3a3'/%3E%3Cpolygon points='135,475 200,430 800,430 865,475 900,600 100,600' fill='%23585858'/%3E%3C/svg%3E");
+  background:
+    /* 床・下部のライン（ダークグレー） */
+    linear-gradient(to top, #222222 0 5%, #111111 5% 5.6%, transparent 5.6%),
+    /* 上部からの光（柔らかい白の照射光） */
+    radial-gradient(ellipse at 50% -10%, rgba(255, 255, 255, 0.2), transparent 60%),
+    /* 上下の影（上下の黒グラデーション） */
+    linear-gradient(180deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.1) 45%, rgba(0, 0, 0, 0.6)),
+    /* 壁・床の縦ストライプ模様（グレー系） */
+    repeating-linear-gradient(90deg, #4a4a4a 0 46px, #3f3f3f 46px 50px, #4a4a4a 50px 52px, #353535 52px 54px);
 }
 introBg::after{content:'';position:absolute;inset:0;background:#fff;mix-blend-mode:soft-light;opacity:0;animation:flick 3.2s steps(1) infinite}
 #introCanvas{position:absolute;inset:0;width:100%;height:100%}
