@@ -2,105 +2,190 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ACCESS(TEST)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>全方向探索 × QR連動アート(test)</title>
+  <!-- Panzoomライブラリ (CDN) -->
+  <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
   <style>
-    body {
+    body, html {
       margin: 0;
-      padding: 40px;
-      min-height: 100vh;
-      font-family: sans-serif;
-      transition: all 0.3s ease;
-      overflow-x: hidden;
-      box-sizing: border-box;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #0d0d0d;
+      font-family: monospace;
+      user-select: none;
+      touch-action: none; /* スマホのバウンススクロール防止 */
     }
-    .title {
-      display: inline-block;
-      transition: transform 0.3s;
+
+    /* 巨大キャンバス (3000px * 3000px) */
+    #world {
+      width: 3000px;
+      height: 3000px;
+      background-image: radial-gradient(#2a2a2a 1px, transparent 1px);
+      background-size: 50px 50px;
+      position: relative;
     }
-    .container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      margin-top: 40px;
-    }
-    .card {
-      padding: 20px;
-      background: #ffffff;
-      border: 3px solid #000000;
-      box-shadow: 5px 5px 0 #000000;
-      font-weight: bold;
-      transition: transform 0.3s;
-    }
-    .random-btn {
-      display: inline-block;
-      margin-top: 50px;
-      padding: 15px 30px;
-      background: #000000;
-      color: #ffffff;
-      text-decoration: none;
-      font-weight: bold;
-      font-size: 18px;
+
+    /* マップ上に散らばる作品スポット */
+    .spot {
+      position: absolute;
+      width: 280px;
+      padding: 15px;
+      background: #1a1a1a;
+      border: 2px solid #00ff00;
+      color: #00ff00;
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
       border-radius: 4px;
+      cursor: pointer;
     }
+
+    .spot h3 { margin: 0 0 10px 0; font-size: 16px; }
+
+    /* モーダル（動画ポップアップ） */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      position: relative;
+      width: 90%;
+      max-width: 500px;
+      background: #000;
+      border: 2px solid #00ff00;
+      padding: 20px;
+      color: #00ff00;
+    }
+    .modal-close {
+      position: absolute;
+      top: 10px; right: 15px;
+      color: #00ff00;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    video { width: 100%; display: block; margin-top: 10px; }
   </style>
 </head>
 <body>
 
-  <h1 class="title" id="main-title">CHANGE DESIGN</h1>
-  <p id="sub-text">F5 to change the design</p>
+  <!-- 探索ワールド -->
+  <div id="world">
+    <!-- スタート位置（中央付近） -->
+    <div id="start" class="spot" style="top: 1400px; left: 1350px; border-color: #ffffff; color: #ffffff;">
+      <h3>📍 スタート地点</h3>
+      <p>画面をスワイプして探検してください。</p>
+    </div>
 
-  <div class="container">
-    <div class="card">作品要素 A</div>
-    <div class="card">作品要素 B</div>
-    <div class="card">作品要素 C</div>
+    <!-- 作品1 (北西) -->
+    <div id="cam1" class="spot" style="top: 500px; left: 600px;">
+      <h3>📹 CAM-01 [Office]</h3>
+      <p>作品資料 A：オフィス監視映像</p>
+    </div>
+
+    <!-- 作品2 (東) -->
+    <div id="cam2" class="spot" style="top: 1300px; left: 2300px;">
+      <h3>📹 CAM-02 [Corridor]</h3>
+      <p>作品資料 B：廊下監視映像</p>
+    </div>
+
+    <!-- 作品3 (南) -->
+    <div id="cam3" class="spot" style="top: 2400px; left: 1200px;">
+      <h3>📹 CAM-03 [Secret Room]</h3>
+      <p>作品資料 C：地下室監視映像</p>
+    </div>
   </div>
 
-  <div>
-    <a href="#" class="random-btn" id="art-link">ランダムなリンク先へ</a>
+  <!-- 動画用モーダル -->
+  <div id="videoModal" class="modal-overlay">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeModal()">&times;</span>
+      <h3 id="modalTitle">CAM-00</h3>
+      <video id="modalVideo" controls autoplay muted playsinline></video>
+    </div>
   </div>
 
   <script>
-    // ページ読み込み（アクセス）時に発動するスクリプト
-    document.addEventListener('DOMContentLoaded', () => {
-      
-      // 1. 背景色をランダムに変える
-      const colors = ['#f4f4f0', '#ffe6e6', '#e6f0ff', '#e6ffe6', '#fff0e6', '#222222'];
-      const randomBg = colors[Math.floor(Math.random() * colors.length)];
-      document.body.style.backgroundColor = randomBg;
-      
-      // 背景が黒っぽい場合は文字を白くする
-      if (randomBg === '#222222') {
-        document.body.style.color = '#ffffff';
-      }
-
-      // 2. タイトルの大きさと傾きをランダムに変える
-      const title = document.getElementById('main-title');
-      const rotate = Math.floor(Math.random() * 30) - 15; // -15deg〜15deg
-      const size = Math.floor(Math.random() * 20) + 24; // 24px〜44px
-      title.style.transform = `rotate(${rotate}deg)`;
-      title.style.fontSize = `${size}px`;
-
-      // 3. カード要素を個別に傾けたりズラしたりする
-      const cards = document.querySelectorAll('.card');
-      cards.forEach(card => {
-        const r = Math.floor(Math.random() * 60) - 30; // -30deg〜30deg
-        const x = Math.floor(Math.random() * 40) - 20; // -20px〜20px
-        const y = Math.floor(Math.random() * 40) - 20;
-        card.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg)`;
-      });
-
-      // 4. ボタンのリンク先をアクセス毎にランダムに変更する
-      const links = [
-        'https://www.google.com',
-        'https://kds.ac.jp',
-        'https://ryukitanaka.com',
-        'https://youtube.com'
-      ];
-      const linkBtn = document.getElementById('art-link');
-      linkBtn.href = links[Math.floor(Math.random() * links.length)];
-      linkBtn.target = "_blank"; // 別タブで開く
+    const elem = document.getElementById('world');
+    const panzoom = Panzoom(elem, {
+      maxScale: 3,
+      minScale: 0.5,
+      contain: 'outside',
+      animate: true,
+      duration: 1200, // 自動移動にかける時間（ミリ秒）
+      easing: 'ease-in-out'
     });
+
+    // 各作品の動画データマップ
+    const itemData = {
+      'cam1': { title: 'CAM-01 [Office]', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4' },
+      'cam2': { title: 'CAM-02 [Corridor]', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4' },
+      'cam3': { title: 'CAM-03 [Secret Room]', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4' }
+    };
+
+    // 指定された要素（スポット）を画面の中央に収める移動関数
+    function focusElement(elementId, autoOpenVideo = false) {
+      const target = document.getElementById(elementId);
+      if (!target) return;
+
+      // 対象要素の座標（キャンバス上の位置）を取得
+      const targetX = parseFloat(target.style.left);
+      const targetY = parseFloat(target.style.top);
+
+      // 画面中央に持ってくる計算
+      const screenW = window.innerWidth;
+      const screenH = window.innerHeight;
+      const panX = -(targetX - screenW / 2 + 140); // 140は要素幅の半分
+      const panY = -(targetY - screenH / 2 + 50);
+
+      // スムースパン移動
+      panzoom.pan(panX, panY, { animate: true });
+
+      // 移動完了後に動画を開く
+      if (autoOpenVideo && itemData[elementId]) {
+        setTimeout(() => {
+          openModal(itemData[elementId].title, itemData[elementId].video);
+        }, 1300); // 1.3秒後（移動完了直後）に開く
+      }
+    }
+
+    // URLパラメータのチェック（QRアクセス判定）
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetItem = urlParams.get('item');
+
+      if (targetItem && itemData[targetItem]) {
+        // QRからアクセスされた場合：該当の座標へ滑らか移動 ＋ 動画表示
+        focusElement(targetItem, true);
+      } else {
+        // 通常アクセスの時：中央のスタート地点へ移動
+        focusElement('start', false);
+      }
+    });
+
+    // モーダル操作関数
+    function openModal(title, videoUrl) {
+      document.getElementById('modalTitle').innerText = title;
+      const video = document.getElementById('modalVideo');
+      video.src = videoUrl;
+      document.getElementById('videoModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      const video = document.getElementById('modalVideo');
+      video.pause();
+      document.getElementById('videoModal').style.display = 'none';
+    }
+
+    // マスク（ホイール）ズーム対応
+    elem.parentElement.addEventListener('wheel', panzoom.zoomWithWheel);
   </script>
+
 </body>
 </html>
