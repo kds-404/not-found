@@ -999,34 +999,43 @@ function setActive(key){ floaters.forEach(f => f.el.classList.remove('active'));
 // ⭕ 修正版 mountMedia 関数
 function mountMedia(key, m){
   dMedia.innerHTML = ''; dosCanvas = null; dosMirror = false;
-  const src = m.video || (key === 'cam1' ? CONFIG.cameraVideo : '');
+
+  // m が undefined や null の場合でもエラーで止まらないよう保護
+  const item = m || {};
+  const src = item.video || (key === 'cam1' ? (typeof CONFIG !== 'undefined' ? CONFIG.cameraVideo : '') : '');
   
   if(src){
     const v = mk('video'); 
     v.src = src; 
+    if(item.poster) v.poster = item.poster;
+
     v.muted = true; 
-    v.setAttribute('muted',''); 
     v.loop = true; 
     v.autoplay = true; 
     v.playsInline = true; 
+    v.setAttribute('muted',''); 
     v.setAttribute('playsinline','');
     v.setAttribute('webkit-playsinline',''); // iOS互換用
+    v.setAttribute('preload', 'auto');
 
-    if(m.poster) v.poster = m.poster;
     dMedia.appendChild(v);
 
-    // ⭕ 動画の読み込み準備ができたら再再生を試みる
-    v.addEventListener('loadeddata', () => {
-      v.play().catch(() => {});
-    });
+    // 再生拒否エラーが起きてもスクリプト全体を止めない安全な再生処理
+    const startPlay = () => {
+      const playPromise = v.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => console.warn('Video play blocked:', err));
+      }
+    };
 
-    // ⭕ DOM追加後、一瞬（50ms）遅らせて確実に play をキック
-    setTimeout(() => {
-      v.load();
-      v.play().catch(err => console.log('Video play deferred:', err));
-    }, 50);
+    if (v.readyState >= 2) {
+      startPlay();
+    } else {
+      v.addEventListener('loadeddata', startPlay, { once: true });
+    }
 
-    dMedia.appendChild(mk('span','dcap', key === 'cam1' ? 'CAM01 LIVE' : 'RECORD '+m.tag));
+    const tagText = item.tag ? 'RECORD ' + item.tag : 'RECORDING';
+    dMedia.appendChild(mk('span','dcap', key === 'cam1' ? 'CAM01 LIVE' : tagText));
   }else{
     const c = mk('canvas'); 
     c.width = 320; 
