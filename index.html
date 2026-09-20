@@ -55,7 +55,7 @@ html,body{margin:0;height:100%;background:#262626;overflow:hidden;overscroll-beh
 .txt .up{font-size:1.16em;font-weight:800}
 
 /* 白昼夢ロゴ（ここは書き出したロゴ画像に差し替え可: CONFIG.logoImage） */
-.lgw{z-index:1}
+.lgw{z-index:10}
 .logo{position:relative;display:block;font:800 calc(96px*var(--k))/1 var(--serif);color:#fff;letter-spacing:-.05em;white-space:nowrap;padding:.06em .1em .02em}
 .logo img{display:block;height:calc(120px*var(--k));width:auto}
 .logo i{display:inline-block;font-style:normal;transform-origin:50% 60%}
@@ -80,7 +80,7 @@ html,body{margin:0;height:100%;background:#262626;overflow:hidden;overscroll-beh
 .big i{display:inline-block;font-style:normal}
 .big i:nth-child(1){transform:translate(-.04em,-.1em) rotate(-9deg) scale(1.04,.96)}
 .big i:nth-child(2){transform:translate(.04em,.12em) rotate(12deg) skewX(-8deg)}
-.kuwa2{position:relative;width:calc(210px*var(--k));height:calc(250px*var(--k));z-index:1}
+.kuwa2{position:relative;width:calc(210px*var(--k));height:calc(250px*var(--k));z-index:10}
 .kuwa2 b{position:absolute;font:800 calc(112px*var(--k))/1 var(--serif);color:#fff}
 .kuwa2 b:nth-of-type(1){left:0;top:0;transform:rotate(-6deg)}
 .kuwa2 b:nth-of-type(2){left:calc(62px*var(--k));top:calc(112px*var(--k));transform:rotate(5deg) skewX(-6deg)}
@@ -273,17 +273,16 @@ body.ready #hud{opacity:1}
 'use strict';
 
 /* =====================================================================
-   0. 設定・手がかりデータ（ここを編集して作品を育てる）
+   0. 設定・手がかりデータ
    ===================================================================== */
 const CONFIG = {
-  BOARD: 3200,          // 盤面の一辺(px)。イラレ案(1932px)をこの大きさに拡大して配置
+  BOARD: 3200,          // 盤面の一辺(px)。
   cameraVideo: '',      // 例: 'media/cam01.mp4'。空なら疑似ライブ映像(Canvas→<video>)を自動生成
-  logoImage: '',        // 例: 'media/logo.svg'。空なら明朝体で組んだ仮ロゴ
-  qrIntro: 'short',     // QRアクセス時の導入: 'short'=短縮版で自動遷移 / 'none'=物理演算を省略
+  logoImage: 'media/logo.gif',        // 例: 'media/logo.svg'。
+  qrIntro: 'short',     
 };
 
-// URL:  ?item=cam1 / ?item=001 … / ?item=victim / ?item=committee   （?seed=123 で配置を固定）
-// video に mp4 を指定すると、ポップアップ内でその動画をループ再生します。
+// URL:  ?item=cam1 / ?item=001 … / ?item=victim / ?item=committee
 const META = {
   cam1: { tag:'CAM01', sub:'監視カメラ', title:'32教室',
     body:'度々「現象」が報告されている教室。調査中は常に状態を記録し「現象」の発生に備えている。',
@@ -293,13 +292,13 @@ const META = {
     note:'発見 16:42 ／ 回収済', video:'', poster:'' },
   '002': { tag:'#002', sub:'現象記録', title:'2階図書館',
     body:'本棚でこのような現象が複数件目撃されている。',
-    note:'確認 14:18 ／ 目撃者：7名', video:'', poster:'' },
+    note:'確認 14:18 ／ 目撃者：7名', video:'media/002.mp4', poster:'' },
   '003': { tag:'#003', sub:'現象記録', title:'5階エレベーターホール',
     body:'地震のような音と共に物体が動き出したという証言がある。',
-    note:'発見 10:46 ／ 撮影：某学生', video:'', poster:'' },
+    note:'発見 10:46 ／ 撮影：某学生', video:'media/003.mp4', poster:'' },
   '004': { tag:'#004', sub:'遺失物', title:'某職員',
     body:'某職員によると、授業で使用するUSBが盗まれたとのこと。',
-    note:'証言 12:56 ／ 計数：不安定', video:'', poster:'' },
+    note:'証言 12:56 ／ 離席中に紛失', video:'', poster:'' },
   '006': { tag:'#006', sub:'発見物', title:'7階学生ホール',
     body:'夜間部の学生が発見。中のデータは消去されていたという。',
     note:'発見 17:40 ／ 所有者：████', video:'', poster:'' },
@@ -1012,7 +1011,7 @@ function introTick(now, dt){
     if(!intro.ready){
       const pct = Math.min(99, Math.round(intro.spawned/intro.N*100));
       introMsg.textContent = (intro.qrKey ? '該当する手がかりを検索しています…' : 'ボードを再構成しています…') + ' ' + pct + '%';
-      if(intro.spawned >= intro.N && now - intro.t0 >= intro.N*intro.gap + (intro.short ? 900 : 1300)){
+      if(intro.spawned >= intro.N && now - intro.t0 >= intro.N*intro.gap + (intro.short ? 100 : 200)){
         intro.ready = true; introMsg.textContent = intro.qrKey ? '調査ボードへのアクセスを許可します' : '画面をタップして調査を開始'; introMsg.classList.add('tap');
         if(intro.qrKey) setTimeout(() => explode(W/2, H*.8), 250);
       }
