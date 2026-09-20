@@ -34,7 +34,35 @@ html,body{margin:0;height:100%;background:#262626;overflow:hidden;overscroll-beh
 
 img {-webkit-touch-callout: none;user-select: none;-webkit-user-drag: none;}
 
-.smooth-element {will-change: transform, opacity;transform: translateZ(0);}
+body:not(.is-mobile) .smooth-element {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* PC（スマホ以外）のときだけ SVG フィルターを有効化 */
+body:not(.is-mobile) .glitch-target {
+  filter: url(#warp1);
+}
+
+/* スマホ時はフィルターを無効（または軽量な代替表示）にする */
+body.is-mobile .glitch-target {
+  filter: none;
+}
+
+/* 画面全体のスクロール跳ね返り・再読み込み動作を禁止 */
+html, body {
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  overflow: hidden;
+  height: 100%;
+}
+
+/* panzoomの操作エリアに対してブラウザデフォルトのタッチ挙動を無効化 */
+#viewport, #board {
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
 
 /* ---------- 盤面 ---------- */
 #viewport{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:grab;background:#2a2a2a}
@@ -209,13 +237,23 @@ body.ready #hud{opacity:1}
 
 /* ---------- 導入（物理演算） ---------- */
 #intro{position:absolute;inset:0;z-index:50;touch-action:manipulation;cursor:default}
-#introBg{position:absolute;inset:0;
+/* #introBg{position:absolute;inset:0;
   background:
     linear-gradient(to top,#2b2612 0 5%,#15120a 5% 5.6%,transparent 5.6%),
     radial-gradient(ellipse at 50% -10%,rgba(255,250,190,.32),transparent 60%),
     linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,.08) 45%,rgba(0,0,0,.5)),
     repeating-linear-gradient(90deg,#8a8342 0 46px,#7f783a 46px 50px,#8a8342 50px 52px,#726b33 52px 54px)}
-#introBg::after{content:'';position:absolute;inset:0;background:#fff;mix-blend-mode:soft-light;opacity:0;animation:flick 3.2s steps(1) infinite}
+#introBg::after{content:'';position:absolute;inset:0;background:#fff;mix-blend-mode:soft-light;opacity:0;animation:flick 3.2s steps(1) infinite} */
+#introBg {
+  position: absolute;
+  inset: 0;
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* SVGによる部屋の3Dパース表現（グレー系カラー） */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 600' preserveAspectRatio='none'%3E%3Crect width='1000' height='600' fill='%23f0f0f0'/%3E%3Cpolygon points='100,0 135,0 135,600 100,600' fill='%23d8d8d8'/%3E%3Cpolygon points='865,0 900,0 900,600 865,600' fill='%23e5e5e5'/%3E%3Cpolygon points='135,0 200,0 200,430 135,475' fill='%23cccccc'/%3E%3Cpolygon points='800,0 865,0 865,475 800,430' fill='%23e0e0e0'/%3E%3Crect x='200' y='0' width='600' height='430' fill='%23a3a3a3'/%3E%3Cpolygon points='135,475 200,430 800,430 865,475 900,600 100,600' fill='%23585858'/%3E%3C/svg%3E");
+}
+introBg::after{content:'';position:absolute;inset:0;background:#fff;mix-blend-mode:soft-light;opacity:0;animation:flick 3.2s steps(1) infinite}
 #introCanvas{position:absolute;inset:0;width:100%;height:100%}
 #introUI{position:absolute;inset:0;pointer-events:none;transition:opacity .25s}
 #introUI.gone{opacity:0}
@@ -306,6 +344,15 @@ body.ready #hud{opacity:1}
 (() => {
 'use strict';
 
+// スマホ（iPhone, iPad, Android等）かどうかを判定
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+// スマホの場合、bodyタグに 'is-mobile' クラスを付与
+if (isMobile) {
+  document.body.classList.add('is-mobile');
+}
+
 /* =====================================================================
    0. 設定・手がかりデータ
    ===================================================================== */
@@ -321,12 +368,12 @@ const INTRO_TEXTURES = ['media/intro01.png', 'media/intro02.png', 'media/intro03
 const INTRO_TEX = {
   order: 'random',   // 'random'=ランダム / 'cycle'=配列の順に繰り返し
   ratio: 1,          // 画像を使う確率 0〜1（1=全部画像 / .6=6割が画像で残りは従来の机・椅子）
-  size:  2.0,        // 画像の長辺の大きさ（単位 u ≒ 画面幅/9）
+  size:  isMobile ? 3.0 : 2.0,        // 画像の長辺の大きさ（単位 u ≒ 画面幅/9）
   hit:   .7,         // 当たり判定の縮小率（透明な余白ぶん小さくして、浮いて見えるのを防ぐ）
 };
 
 /* ★追加③: 監視カメラ画像。添字がそのまま camId（0=通常 / 1〜10=異変） */
-const CAM_IMAGES = Array.from({ length: 11 }, (_, i) => `media/cam_${String(i).padStart(2, '0')}.jpg`);
+const CAM_IMAGES = Array.from({ length: 8 }, (_, i) => `media/cam_${String(i).padStart(2, '0')}.jpg`);
 const CAM_FX = {
   glitchMs: 520,        // グリッチの長さ(ms)。画像の差し替えはその45%地点
   auto: true,           // true=異変をランダムに自動発生
@@ -672,7 +719,7 @@ function initCamFeed(){
     camMode = 'image'; camCur = 0; camImgEl.src = CAM_IMAGES[0];
     camImgEl.addEventListener('load', () => { camImgEl.style.visibility = ''; camMode = 'image'; });
     camImgEl.addEventListener('error', () => { camImgEl.style.visibility = 'hidden'; camMode = 'canvas'; });   // 失敗時は従来の疑似映像
-    CAM_IMAGES.forEach(u => { new Image().src = u; });     // 先読み
+    if (!isMobile) {CAM_IMAGES.forEach(u => {new Image().src = u;});}    // 先読み
     return;
   }                                                        // ★追加ここまで
   if(CONFIG.cameraVideo){
@@ -819,7 +866,11 @@ const mqTouch = matchMedia('(pointer: coarse)');
 const zoomOn = () => mqTouch.matches && !!window.Panzoom;
 const limits = { min: 1, max: 1 };
 function updateLimits(){
-  if(zoomOn()){ limits.min = Math.max(.1, Math.min(innerWidth, innerHeight)/BOARD*.75); limits.max = 3.2; }
+//  if(zoomOn()){ limits.min = Math.max(.1, Math.min(innerWidth, innerHeight)/BOARD*.75); limits.max = 2.0; }
+  if(zoomOn()){ 
+    limits.min = 0.50; 
+    limits.max = 2.0;  
+  }
   else { limits.min = limits.max = 1; }
 }
 updateLimits();
@@ -860,6 +911,7 @@ const HOME = { x:966*K, y:965.5*K };
 function homeView(){
   const vw = innerWidth, vh = innerHeight, land = vw >= vh;
   const W = (land ? 742 : 269)*K, H = (land ? 417 : 477)*K;
+  const targetScale = isMobile ? 0.55 : Math.min(vw/W, vh/H);
   return { x:HOME.x, y:HOME.y, s:clamp(Math.min(vw/W, vh/H), limits.min, limits.max) };
 }
 
@@ -890,17 +942,24 @@ viewport.addEventListener('wheel', e => {
   e.preventDefault(); cancelFlight();
   if(!zoomOn()) return;
   pz.zoomWithWheel(e);
-  clearTimeout(settleT); settleT = setTimeout(settleBounds, 700);
+  clearTimeout(settleT); settleT = setTimeout(settleBounds, 100);// 700ms > 100ms
 }, { passive:false });
-board.addEventListener('panzoomend', () => { clearTimeout(settleT); settleT = setTimeout(settleBounds, 250); });
+board.addEventListener('panzoomend', () => { clearTimeout(settleT); settleT = setTimeout(settleBounds, 30); }); //250 >>30
 function settleBounds(){
   if(flight || intro.active) return;
-  const c = cam.center(), m = 260;
+  const c = cam.center(), m = 50; //260
   const nx = clamp(c.x, -m, BOARD+m), ny = clamp(c.y, -m, BOARD+m);
-  if(nx !== c.x || ny !== c.y) flyTo(nx, ny, c.s, { dur:800, ease:easeOutCubic, bump:0 });
+  if(nx !== c.x || ny !== c.y) flyTo(nx, ny, c.s, { dur:300, ease:easeOutCubic, bump:0 }); //dur800
 }
+// ジェスチャーキャンセル
 ['gesturestart','gesturechange','gestureend'].forEach(t =>
   document.addEventListener(t, e => e.preventDefault(), { passive:false }));
+
+document.addEventListener('touchmove', e => {
+  if (e.touches.length > 1 || e.scale !== 1) {
+    e.preventDefault(); // ピンチイン・アウト時の誤動作防止
+  }
+}, { passive: false });
 
 /* =====================================================================
    5. 手がかり選択 / 詳細ポップアップ
