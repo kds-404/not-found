@@ -129,7 +129,8 @@ html, body {
 .card .shp{position:absolute;z-index:1}
 .card .shp svg{display:block;width:100%;height:100%;overflow:visible}
 /* ★追加② */
-.card .pic{position:absolute;z-index:1;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-drag:none}
+.card .pic{position:absolute;z-index:1;object-fit:cover;user-select:none;-webkit-user-drag:none;}
+.card:not(.victim) .pic{left:8%;top:27%;width:84%;height:66%;box-shadow:0 3px 8px rgba(0,0,0,.4)}   /* 証拠品カード: 紙の上に貼る */
 .card.victim .pic{left:9%;top:24%;width:82%;height:68%}   /* 被害者カード: 写真の枠 */
 .committee{cursor:pointer;z-index:2;width:calc(196px*var(--k));height:calc(202px*var(--k))}
 .committee .sq{position:absolute;inset:0;background:#f00;box-shadow:0 8px 26px rgba(0,0,0,.4)}
@@ -223,7 +224,7 @@ body.ready #hud{opacity:1}
 .dtag{font:500 14px/1.2 var(--serif);letter-spacing:.12em;display:flex;gap:.9em;align-items:baseline;margin:0 40px 10px 0}
 .dtag #dTag{font:800 22px/1 var(--serif);letter-spacing:.04em}
 .dmedia{position:relative;aspect-ratio:16/9;background:#111;margin-bottom:14px;overflow:hidden}
-.dmedia canvas,.dmedia video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.dmedia canvas,.dmedia video,.dmedia img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .dmedia .dcap{position:absolute;left:8px;top:6px;font:11px/1 var(--mono);color:#fff;letter-spacing:.1em;text-shadow:0 0 4px #000}
 .dmedia .drec{position:absolute;right:9px;top:7px;width:9px;height:9px;border-radius:50%;background:#ff2229;animation:recb 1.2s steps(1) infinite}
 #dTitle{margin:0 0 8px;font:800 19px/1.45 var(--serif);letter-spacing:.04em}
@@ -303,7 +304,7 @@ introBg::after{content:'';position:absolute;inset:0;background:#fff;mix-blend-mo
   <div id="fxFlick" class="fx"></div>
 
   <div id="hud">
-    <div id="hudTitle"><b>白昼夢現象調査委員会</b>捜査ボード ／ 2026.10.08</div>
+    <div id="hudTitle"><b>白昼夢現象調査委員会</b>捜査ボード ／ <span id="currentDate"></span></div>
     <div id="index"></div>
     <div id="hint">ドラッグで探索 ／ 手がかりをタップ</div>
     <div id="hudBtns">
@@ -357,6 +358,17 @@ if (isMobile) {
   document.body.classList.add('is-mobile');
 }
 
+window.addEventListener('DOMContentLoaded', () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0'); // 2桁揃え (例: 09)
+  const day = String(today.getDate()).padStart(2, '0');         // 2桁揃え (例: 21)
+
+  const dateEl = document.getElementById('currentDate');
+  if (dateEl) {
+    dateEl.textContent = `${year}.${month}.${day}`;
+  }
+});
 
 /* =====================================================================
    0. 設定・手がかりデータ
@@ -391,34 +403,34 @@ const CAM_TRIGGER = { };   // 任意: 手がかりを開いた時に出す異変
 const META = {
   cam1: { tag:'CAM01', sub:'監視カメラ', title:'32教室',
     body:'度々「現象」が報告されている教室。調査中は常に状態を記録し「現象」の発生に備えている。',
-    note:'REC 2026.10.01 - 2026.10.03', video:'', poster:'' },
+    note:'REC 2026.10.01 - 2026.10.03', video:'', poster:'', image:'' },
   '001': { tag:'#001', sub:'拾得物', title:'3階エレベーターホール',
     body:'前日の巡回記録には存在しない。おそらく被害者のものだろう。',
-    note:'発見 16:42 ／ 回収済', video:'', poster:'' },
+    note:'発見 16:42 ／ 回収済', video:'', poster:'', image:'' },
   '002': { tag:'#002', sub:'現象記録', title:'2階図書館',
     body:'本棚でこのような現象が複数件目撃されている。',
-    note:'確認 14:18 ／ 目撃者：7名', video:'media/002.mp4', poster:'media/002p.jpg' },
+    note:'確認 14:18 ／ 目撃者：7名', video:'media/002.mp4', poster:'media/002p.jpg', image:'media/002p.jpg' },
   '003': { tag:'#003', sub:'現象記録', title:'5階エレベーターホール',
     body:'地震のような音と共に物体が動き出したという証言がある。',
-    note:'発見 10:46 ／ 撮影：某学生', video:'media/003.mp4', poster:'media/003p.jpg' },
+    note:'発見 10:46 ／ 撮影：某学生', video:'media/003.mp4', poster:'media/003p.jpg', image:'media/003p.jpg'},
   '004': { tag:'#004', sub:'遺失物', title:'某職員',
     body:'某職員によると、授業で使用するUSBが盗まれたとのこと。',
-    note:'証言 12:56 ／ 離席中に紛失', video:'', poster:'' },
+    note:'証言 12:56 ／ 離席中に紛失', video:'', poster:'', image:'' },
   '006': { tag:'#006', sub:'発見物', title:'7階学生ホール',
     body:'夜間部の学生が発見。中のデータは消去されていたという。',
-    note:'発見 17:40 ／ 所有者：████', video:'', poster:'' },
+    note:'発見 17:40 ／ 所有者：████', video:'', poster:'', image:'' },
   '007': { tag:'#007', sub:'発見物', title:'3階男子トイレ',
     body:'被害者のものと思われる████████が見つかった。',
-    note:'発見 19:56 ／ 調査中', video:'', poster:'' },
+    note:'発見 19:56 ／ 調査中', video:'', poster:'', image:'' },
   '008': { tag:'#008', sub:'発見物', title:'2号館4階テラス',
     body:'欠けている。欠けた部分がどこにあるのかは、まだ見つかっていない。',
-    note:'発見 15:31 ／ 欠損：未回収', video:'', poster:'' },
+    note:'発見 15:31 ／ 欠損：未回収', video:'', poster:'', image:'' },
   '009': { tag:'#009', sub:'調査記録', title:'32教室',
     body:'調査員が学校周辺で発生している現象について調査を開始した。',
-    note:'10月某日 ／ 調査員：████', video:'', poster:'' },
+    note:'10月某日 ／ 調査員：████', video:'', poster:'', image:'' },
   victim: { tag:'被害者', sub:'', title:'氏名：████',
     body:'最後の目撃は15:12。調査中に現象に飲み込まれたとみられている。',
-    note:'状態：捜索中', video:'', poster:'' },
+    note:'状態：捜索中', video:'', poster:'', image:'' },
   committee: { tag:'調査委員会', sub:'', title:'白昼夢現象調査委員会',
     body:'近頃、桑沢周辺で巻き起こっている「白昼夢」の謎。我々は現象の原因を調べるべく、「白昼夢」の調査を開始した。',
     note:'連絡先：03-46░1-▓2▒9', video:'', poster:'' },
@@ -593,6 +605,7 @@ function shapeMarkup(color){
 }
 const PALETTE = shuffle(['#0000ff','#f7941d','#29abe2','#ff00ff','#ffff00','#00ff00','#39b54a','#93278f']);
 /* ★追加②: カード上に画像を置く小道具 */
+const isImageSrc = s => /\.(gif|jpe?g|png|webp|avif|svg)(\?.*)?(#.*)?$/i.test(s || '');   // ★追加
 function makePic(src, css){
   const im = mk('img', 'pic'); im.src = src; im.alt = ''; im.draggable = false; im.decoding = 'async';
   if(css) im.style.cssText = css;
@@ -608,8 +621,10 @@ CARD_POS.forEach((c,i) => {
   const shp = mk('div','shp', shapeMarkup(PALETTE[i]));
   shp.style.cssText = `width:${S}px;height:${S}px;left:${W/2 + dx*K - S/2}px;top:${H/2 + dy*K - S/2}px`;
   // el.appendChild(shp);
-  const imgSrc = META[c[0]] && META[c[0]].image;                  // ★変更: image があれば図形の代わりに画像
-  if(imgSrc) el.appendChild(makePic(imgSrc, shp.style.cssText)); else el.appendChild(shp);
+  const mm = META[c[0]] || {};
+  const imgSrc = mm.image || (isImageSrc(mm.video) ? mm.video : '');   // image を優先。無ければ video が画像ならサムネに使う
+  el.appendChild(shp);                              // 図形は常に表示
+  if(imgSrc) el.appendChild(makePic(imgSrc));       // サムネは後から追加＝図形の上に重なる（位置はCSSで指定）
   addFloat(c[0], el, { x:c[1], y:c[2], r:rr(-5,5), rj:3, jit:80, pin:[dx*K + rr(-12,12)*K, dy*K + rr(-12,12)*K], ext:330, foc:[dx*K*.5, dy*K*.5] });
 });
 { // 被害者
@@ -634,8 +649,11 @@ let camVideo, camCanvas, camCtx, camTs, camImgEl, camCur = -1, camSwapT = 0, cam
   camVideo.muted = true; camVideo.setAttribute('muted',''); camVideo.playsInline = true;
   camCtx = camCanvas.getContext('2d');
   addFloat('cam1', el, { x:575, y:623, r:5.7, rj:2, jit:22, amp:.55, ampR:.5, ext:540 });
+
 }
 $('.cam .rec').style.zIndex = 3;
+
+
 
 /* --- 背景SVG: 揺らぐ塊 / ブロックの間取り線 / 座標ラベル / 塵 --- */
 const bgsvg = $('#bgsvg');
@@ -737,6 +755,7 @@ function initCamFeed(){
     if(camCanvas.captureStream){ camVideo.srcObject = camCanvas.captureStream(24); camVideo.play().catch(() => {}); }
   }catch(err){ /* 失敗時は Canvas がそのまま見える */ }
 }
+
 function drawCam(t){
   const g = camCtx, W = 320, H = 180;
   const vx = 160 + Math.sin(t*.4)*3, vy = 86 + Math.cos(t*.33)*2;
@@ -824,7 +843,7 @@ initCamFeed();
    ===================================================================== */
 function MiniPanzoom(el, parent, opts){
   let x = 0, y = 0; 
-  const s = 1; // 倍率（scale）を1に固定
+  let s = opts?.initialScale ?? (isMobile ? 0.55 : 1);
   const o = Object.assign({ minScale: 1, maxScale: 1 }, opts);
   const pts = new Map();
 
@@ -855,9 +874,11 @@ function MiniPanzoom(el, parent, opts){
   
   parent.addEventListener('pointerup', end); 
   parent.addEventListener('pointercancel', end);
+  
+  apply();
 
   return {
-    getScale: () => 1,
+    getScale: () => s,
     getPan: () => ({ x, y }),
     setOptions: n => Object.assign(o, n),
     zoom: () => {}, // ズーム関数を空にして無効化
@@ -916,8 +937,8 @@ const HOME = { x:966*K, y:965.5*K };
 function homeView(){
   const vw = innerWidth, vh = innerHeight, land = vw >= vh;
   const W = (land ? 742 : 269)*K, H = (land ? 417 : 477)*K;
-  const targetScale = isMobile ? 0.55 : Math.min(vw/W, vh/H);
-  return { x:HOME.x, y:HOME.y, s:clamp(Math.min(vw/W, vh/H), limits.min, limits.max) };
+  const targetScale = isMobile ? 0.65 : Math.min(vw/W, vh/H);
+  return { x:HOME.x, y:HOME.y, s:clamp(targetScale, limits.min, limits.max) };
 }
 
 let flight = null;
@@ -1002,9 +1023,14 @@ function mountMedia(key, m){
 
   // m が undefined や null の場合でもエラーで止まらないよう保護
   const item = m || {};
-  const src = item.video || (key === 'cam1' ? (typeof CONFIG !== 'undefined' ? CONFIG.cameraVideo : '') : '');
+  const src = item.video || item.image || (key === 'cam1' ? (typeof CONFIG !== 'undefined' ? CONFIG.cameraVideo : '') : '');
   
-  if(src){
+    if(src && isImageSrc(src)){                                        // ★追加: 画像ならポップアップは <img>
+    const im = mk('img'); im.src = src; im.alt = ''; im.draggable = false;
+    im.addEventListener('error', () => im.remove());
+    dMedia.appendChild(im);
+    dMedia.appendChild(mk('span','dcap', item.tag ? 'RECORD ' + item.tag : 'RECORDING'));
+    }else if(src){
     const v = mk('video'); 
     v.src = src; 
     if(item.poster) v.poster = item.poster;
