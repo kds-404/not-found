@@ -211,6 +211,80 @@ body.ready #hud{opacity:1}
 #hint.show{opacity:1}
 @media (max-width:720px),(max-aspect-ratio:1/1){ body.dos-open #hudBtns,body.dos-open #index,body.dos-open #hint{display:none} }
 
+/* ---------- 制作情報ボタン ＆ ダイアログ ---------- */
+#infoBtn{
+  position:fixed;
+  right:max(14px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));
+  width:46px;height:46px;padding:0;border-radius:50%;
+  display:grid;place-items:center;
+  border:1px solid rgba(255,255,255,.45);background:rgba(20,20,20,.62);color:#fff;
+  cursor:pointer;pointer-events:auto;
+  transition:background .2s,border-color .2s,box-shadow .2s,transform .12s,opacity .3s;
+}
+#infoBtn svg{width:20px;height:20px;fill:currentColor}
+#infoBtn::after{                                   /* REC ランプ風の赤い点（既存の recb を流用） */
+  content:'';position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;
+  background:var(--red);animation:recb 1.2s steps(1) infinite;
+}
+@media (hover:hover){
+  #infoBtn:hover{border-color:var(--red);background:rgba(60,12,12,.78);box-shadow:0 0 0 4px rgba(255,42,42,.14),0 0 16px rgba(255,42,42,.35)}
+}
+#infoBtn:active{transform:scale(.9);background:rgba(90,16,16,.88);border-color:var(--red)}
+#infoBtn:focus-visible{outline:2px solid #fff;outline-offset:3px}
+body.dos-open #infoBtn{opacity:0;pointer-events:none}   /* 手がかり詳細が右下に出ている間は隠す */
+
+#infoDlg{
+  width:min(420px,calc(100vw - 32px));max-width:none;padding:0;border:0;background:transparent;
+  color:#e8e8e8;overflow:visible;
+  -webkit-user-select:text;user-select:text;         /* body 全体の user-select:none を上書き（URL等をコピー可能に） */
+}
+#infoDlg::backdrop{background:rgba(0,0,0,.74);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.info{
+  position:relative;padding:28px 24px 22px;
+  max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);overflow:auto;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.028) 0 1px,transparent 1px 4px),#161616;
+  border:1px solid rgba(255,255,255,.22);border-top:3px solid var(--red);
+  box-shadow:0 0 0 1px #000,0 24px 70px rgba(0,0,0,.8);
+  font-family:var(--serif);
+}
+.info::after{                                      /* 薄い「CONFIDENTIAL」スタンプ */
+  content:'CONFIDENTIAL';position:absolute;right:16px;top:74px;transform:rotate(-8deg);
+  border:2px solid var(--red);color:var(--red);opacity:.16;padding:.1em .5em;
+  font:800 18px/1.3 var(--serif);letter-spacing:.2em;pointer-events:none;
+}
+.info-tag{margin:0 0 10px;font:11px/1.4 var(--mono);letter-spacing:.2em;color:var(--red)}
+.info h2{margin:0;font:800 21px/1.4 var(--serif);letter-spacing:.1em;color:#fff}
+.info-sub{margin:2px 0 18px;font:400 12px/1.6 var(--serif);letter-spacing:.24em;color:rgba(255,255,255,.6)}
+.info-list{margin:0;border-top:1px solid rgba(255,255,255,.18)}
+.info-list div{display:grid;grid-template-columns:7em 1fr;gap:12px;padding:10px 0;border-bottom:1px dashed rgba(255,255,255,.18)}
+.info-list dt{font:12px/1.7 var(--mono);letter-spacing:.1em;color:rgba(255,255,255,.55)}
+.info-list dd{margin:0;font:400 14px/1.7 var(--serif);letter-spacing:.06em;color:#f2f2f2;word-break:break-word}
+.info-list a,.info-note a{color:#fff;text-decoration:underline;text-underline-offset:3px}
+.info-note{margin:16px 0 18px;font:400 11px/1.9 var(--serif);letter-spacing:.06em;color:rgba(255,255,255,.5)}
+.info-actions{display:flex;justify-content:center}
+.info-close{
+  min-height:44px;padding:0 34px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.06);
+  color:#fff;font:500 14px/1 var(--serif);letter-spacing:.3em;cursor:pointer;
+  transition:background .2s,color .2s,transform .12s;
+}
+@media (hover:hover){ .info-close:hover{background:#fff;color:#111} .info-x:hover{background:rgba(255,255,255,.14)} }
+.info-close:active{transform:scale(.96);background:#fff;color:#111}
+.info-x{
+  position:absolute;top:8px;right:8px;width:44px;height:44px;border:0;border-radius:50%;
+  background:transparent;color:#fff;font:300 28px/1 var(--sans);cursor:pointer;transition:background .2s,transform .12s;
+}
+.info-x:active{transform:scale(.88);background:rgba(255,255,255,.22)}
+.info-close:focus-visible,.info-x:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#infoDlg[open] .info{animation:infoIn .3s cubic-bezier(.2,1.2,.4,1) both}
+#infoDlg[open]::backdrop{animation:infoFade .3s ease both}
+#infoDlg.closing .info{animation:infoOut .2s ease-in both}
+#infoDlg.closing::backdrop{animation:infoFadeOut .2s ease-in both}
+@keyframes infoIn{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes infoOut{to{opacity:0;transform:translateY(10px) scale(.97)}}
+@keyframes infoFade{from{opacity:0}to{opacity:1}}
+@keyframes infoFadeOut{to{opacity:0}}
+@media (prefers-reduced-motion:reduce){ #infoDlg .info,#infoDlg::backdrop{animation:none!important} #infoBtn::after{animation:none} }
+
 /* ---------- 手がかり詳細（ふよふよポップアップ） ---------- */
 #dossier{position:fixed;z-index:30;right:max(20px,env(safe-area-inset-right));bottom:max(20px,env(safe-area-inset-bottom));width:min(430px,calc(100vw - 24px));pointer-events:none}
 #dossier.open{animation:dosIn .8s cubic-bezier(.2,1.5,.35,1) both}
@@ -304,7 +378,7 @@ introBg::after{content:'';position:absolute;inset:0;background:#fff;mix-blend-mo
   <div id="fxFlick" class="fx"></div>
 
   <div id="hud">
-    <div id="hudTitle"><b>白昼夢現象調査委員会</b>捜査ボード ／ <span id="currentDate"></span></div>
+    <div id="hudTitle" ><b>白昼夢現象調査委員会</b>捜査ボード ／ <span id="currentDate"></span></div>
     <div id="index"></div>
     <div id="hint">ドラッグで探索 ／ 手がかりをタップ</div>
     <div id="hudBtns">
@@ -314,6 +388,9 @@ introBg::after{content:'';position:absolute;inset:0;background:#fff;mix-blend-mo
       <!-- <button class="hb" id="bIn" aria-label="拡大">＋</button>
       <button class="hb" id="bOut" aria-label="縮小">－</button> -->
     </div>
+    <button id="infoBtn" type="button" aria-label="制作情報を開く" aria-haspopup="dialog" title="制作情報">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.2" r="1.8"/><rect x="10.4" y="9.6" width="3.2" height="9.8" rx=".6"/></svg>
+    </button>
   </div>
 
   <aside id="dossier" hidden aria-live="polite">
@@ -338,6 +415,26 @@ introBg::after{content:'';position:absolute;inset:0;background:#fff;mix-blend-mo
     <div id="flash"></div>
   </div>
 </div>
+
+<!-- ★追加: 制作情報ダイアログ -->
+<dialog id="infoDlg" aria-labelledby="infoTitle">
+  <div class="info">
+    <button type="button" class="info-x" data-close aria-label="閉じる">×</button>
+    <p class="info-tag">PRODUCTION RECORD ／ 調査記録</p>
+    <h2 id="infoTitle">白昼夢現象調査委員会</h2>
+    <p class="info-sub">KUWASAWA DESIGN SCHOOL</p>
+    <dl class="info-list">
+      <div><dt>企画・制作</dt><dd>K&T</dd></div>
+      <div><dt>WEB</dt><dd><a href="https://instagram.com/churroigc" target="_blank" rel="noopener">T</a></dd></div>
+      <div><dt>SNS</dt><dd><a href="https://instagram.com/egg___0141" target="_blank" rel="noopener">K</a></dd></div>
+      <div><dt>撮影・編集</dt><dd>K&T</dd></div>
+      <div><dt>バージョン</dt><dd>v0.5.1</dd></div>
+      <div><dt>公開日</dt><dd>2026.XX.XX</dd></div>
+    </dl>
+    <p class="info-note">© 2026 K&T. All rights reserved.<br>本作品は桑沢祭グランプリ2026応募作品の一部です。実在の人物・団体・事件とは関係ありません。</p>
+    <div class="info-actions"><button type="button" class="info-close" data-close>閉じる</button></div>
+  </div>
+</dialog>
 
 <noscript><p style="position:fixed;inset:0;z-index:99;background:#262626;color:#fff;margin:0;padding:40px">このページの表示には JavaScript が必要です。</p></noscript>
 
@@ -1090,7 +1187,27 @@ function closeDossier(){
   setTimeout(() => { if(tok === dosToken){ dossierEl.hidden = true; dMedia.innerHTML = ''; dosCanvas = null; } }, 380);
 }
 $('#dClose').addEventListener('click', closeDossier);
-addEventListener('keydown', e => { if(e.key === 'Escape') closeDossier(); if((e.key === 'Enter' || e.key === ' ') && intro.active && intro.ready && !intro.exploded){ e.preventDefault(); explode(innerWidth/2, innerHeight*.75); } });
+addEventListener('keydown', e => { if(e.key === 'Escape' && !infoDlg.open) closeDossier(); if((e.key === 'Enter' || e.key === ' ') && intro.active && intro.ready && !intro.exploded){ e.preventDefault(); explode(innerWidth/2, innerHeight*.75); } });
+
+/* ---------- ★追加: 制作情報ダイアログ ---------- */
+const infoDlg = $('#infoDlg'), infoBtn = $('#infoBtn');
+let infoCloseT = 0, infoDownOnBackdrop = false;
+function openInfo(){
+  if(infoDlg.open) return;
+  clearTimeout(infoCloseT); infoDlg.classList.remove('closing');
+  if(typeof infoDlg.showModal === 'function') infoDlg.showModal(); else infoDlg.setAttribute('open','');   // 未対応ブラウザ用の保険
+}
+function closeInfo(){
+  if(!infoDlg.open || infoDlg.classList.contains('closing')) return;
+  const done = () => { infoDlg.classList.remove('closing'); if(infoDlg.close) infoDlg.close(); else infoDlg.removeAttribute('open'); };
+  if(RM){ done(); return; }                                   // reduced-motion はアニメなしで即閉じる
+  infoDlg.classList.add('closing'); infoCloseT = setTimeout(done, 200);
+}
+infoBtn.addEventListener('click', openInfo);
+infoDlg.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeInfo));   // ×ボタン・閉じるボタン
+infoDlg.addEventListener('pointerdown', e => { infoDownOnBackdrop = (e.target === infoDlg); });  // 枠内で押し始めた操作は除外
+infoDlg.addEventListener('click', e => { if(e.target === infoDlg && infoDownOnBackdrop) closeInfo(); });   // 枠外（背景）クリック
+infoDlg.addEventListener('cancel', e => { e.preventDefault(); closeInfo(); });   
 
 /* タップ判定（ドラッグとタップを分離） */
 let down = null; const activePtrs = new Set();
