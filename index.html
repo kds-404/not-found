@@ -1035,6 +1035,23 @@ function playExplodeSfx(){                                                      
   sfxExplode.currentTime = 0; sfxExplode.volume = AUDIO_CONFIG.sfxVolume;
   sfxExplode.play().catch(() => {});
 }
+/* ---------- ★追加: バックグラウンド（他アプリ切替・ホーム画面・タブ非表示）で音声を止める ---------- */
+let wasBgmPlaying = false, wasVideoPlaying = false;
+function onAppHidden(){
+  wasBgmPlaying = soundOn && !bgm.paused;
+  if(wasBgmPlaying) bgm.pause();
+  wasVideoPlaying = !!(dosVideoEl && !dosVideoEl.paused);
+  if(wasVideoPlaying) dosVideoEl.pause();
+}
+function onAppVisible(){
+  if(document.hidden) return;
+  if(wasBgmPlaying && soundOn) bgm.play().catch(() => {});
+  if(wasVideoPlaying && dosVideoEl){
+    dosVideoEl.play().catch(() => { dosVideoEl.muted = true; dosVideoEl.play().catch(() => {}); });   // 復帰後の再生が拒否された場合は無音で継続
+  }
+}
+document.addEventListener('visibilitychange', () => { document.hidden ? onAppHidden() : onAppVisible(); });
+addEventListener('pagehide', onAppHidden);   // iOSでタブを閉じる・スワイプで終了する際の保険（visibilitychangeより確実に呼ばれる場合がある）
 
 initCamFeed();
 
