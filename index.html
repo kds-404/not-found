@@ -211,6 +211,30 @@ body.ready #hud{opacity:1}
 #hint.show{opacity:1}
 @media (max-width:720px),(max-aspect-ratio:1/1){ body.dos-open #hudBtns,body.dos-open #index,body.dos-open #hint{display:none} }
 
+/* ---------- ★追加: サウンド確認ゲート（イントロ内） ---------- */
+#soundGate{position:absolute;left:0;right:0;top:32%;text-align:center;animation:fadeUp .5s ease both;pointer-events:auto}
+#soundGate p{margin:0 0 10px;font:400 12px/1.7 var(--serif);letter-spacing:.16em;color:rgba(255,255,255,.8);text-shadow:0 1px 6px #000}
+.sg-btns{display:flex;gap:10px;justify-content:center}
+.sg-btns button{
+  min-width:120px;min-height:44px;padding:0 18px;border:1px solid rgba(255,255,255,.5);
+  background:rgba(20,20,20,.55);color:#fff;font:500 13px/1 var(--serif);letter-spacing:.14em;cursor:pointer;
+  transition:background .2s,border-color .2s,transform .12s;
+}
+#sgOn{border-color:var(--red)}
+@media (hover:hover){ #sgOn:hover{background:rgba(120,20,20,.55)} #sgOff:hover{background:rgba(70,70,70,.7)} }
+.sg-btns button:active{transform:scale(.96)}
+.sg-btns button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ---------- ★追加: サウンドのON/OFFスイッチ（制作情報ダイアログ内） ---------- */
+.sw{display:inline-flex;align-items:center;gap:8px;background:none;border:0;padding:0;cursor:pointer;color:#f2f2f2;font:400 12px/1.7 var(--serif);letter-spacing:.08em}
+.sw-track{width:38px;height:20px;border-radius:99px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);position:relative;transition:background .2s,border-color .2s}
+.sw-thumb{position:absolute;top:1px;left:1px;width:16px;height:16px;border-radius:50%;background:#ccc;transition:transform .2s,background .2s}
+.sw[aria-checked="true"] .sw-track{background:rgba(255,42,42,.35);border-color:var(--red)}
+.sw[aria-checked="true"] .sw-thumb{transform:translateX(18px);background:#fff}
+.sw:focus-visible{outline:2px solid #fff;outline-offset:3px}
+@media (prefers-reduced-motion:reduce){ #soundGate{animation:none} }
+
 /* ---------- 制作情報ボタン ＆ ダイアログ ---------- */
 #infoBtn{
   position:fixed;
@@ -411,8 +435,17 @@ introBg::after{content:'';position:absolute;inset:0;background:#fff;mix-blend-mo
     <div id="introUI">
       <div id="introTitle">白昼夢現象調査委員会<small>INVESTIGATION BOARD</small></div>
       <div id="introMsg"></div>
+       <!-- ★追加: サウンド確認（初回のみ、設定が未保存の時だけ表示） -->
+      <div id="soundGate" hidden>
+        <p>音声を有効にしますか？</p>
+        <div class="sg-btns">
+          <button type="button" id="sgOn">音声あり</button>
+          <button type="button" id="sgOff">音声なし</button>
+        </div>
     </div>
     <div id="flash"></div>
+     <!-- ★追加: 常時再生するBGM -->
+  <audio id="bgm" loop preload="none"></audio>
   </div>
 </div>
 
@@ -428,8 +461,14 @@ introBg::after{content:'';position:absolute;inset:0;background:#fff;mix-blend-mo
       <div><dt>WEB</dt><dd><a href="https://instagram.com/churroigc" target="_blank" rel="noopener">T</a></dd></div>
       <div><dt>SNS</dt><dd><a href="https://instagram.com/egg___0141" target="_blank" rel="noopener">K</a></dd></div>
       <div><dt>撮影・編集</dt><dd>K&T</dd></div>
-      <div><dt>バージョン</dt><dd>v0.5.1</dd></div>
+      <div><dt>バージョン</dt><dd>v0.5.0</dd></div>
       <div><dt>公開日</dt><dd>2026.XX.XX</dd></div>
+        <!-- ★追加 -->
+      <div><dt>サウンド</dt><dd>
+        <button type="button" id="soundToggle" class="sw" role="switch" aria-checked="false">
+          <span class="sw-track"><span class="sw-thumb"></span></span><span class="sw-label">OFF</span>
+        </button>
+      </dd></div>
     </dl>
     <p class="info-note">© 2026 K&T. All rights reserved.<br>本作品は桑沢祭グランプリ2026応募作品の一部です。実在の人物・団体・事件とは関係ありません。</p>
     <div class="info-actions"><button type="button" class="info-close" data-close>閉じる</button></div>
@@ -475,6 +514,17 @@ const CONFIG = {
   cameraVideo: '',      // 例: 'media/cam01.mp4'。空なら疑似ライブ映像(Canvas→<video>)を自動生成
   logoImage: 'media/logo.png',        // 例: 'media/logo.svg'。
   qrIntro: 'short',     
+};
+
+/* ★追加: サウンド設定 */
+const AUDIO_CONFIG = {
+  bgm: 'media/bgm.mp3',   // 常時流すBGM。空文字 '' にするとBGM機能ごと無効
+  bgmVolume: 0.55,         // BGMの通常音量 (0〜1)
+  duckVolume: 0.16,        // 動画（音声あり）再生中にBGMを下げる音量
+  fadeMs: 900,             // 音量が切り替わる時の所要時間(ms)
+  sfxExplode: 'media/sound_00.mp3',   // ★追加: タップの時の効果音。空文字 '' で無効
+  sfxVolume: 0.8,                     // ★追加: 効果音の音量 (0〜1)
+  storageKey: 'shb-sound', // localStorageに保存するキー名 ('on' / 'off')
 };
 
 /* ★追加①: イントロで落下する画像（透過PNG）*/
@@ -738,6 +788,7 @@ CARD_POS.forEach((c,i) => {
 
 /* --- 監視カメラ（盤面に固定配置され、常時ループ再生） --- */
 let camVideo, camCanvas, camCtx, camTs, camImgEl, camCur = -1, camSwapT = 0, camGlitchT = 0, camAutoT = 0;   // ★camImgEl 以降を追加
+let dosVideoEl = null;   // ★追加: 現在ポップアップに出ている <video>（音声ON/OFF切替やduck解除に使う）
 {
   const el = mk('div','cam'); el.dataset.key = 'cam1';
   el.innerHTML = '<div class="scr"><canvas width="320" height="180"></canvas><video muted loop playsinline autoplay preload="auto"></video><img class="camimg" alt=""><div class="tint"></div><div class="scan"></div><div class="roll"></div>'
@@ -933,6 +984,58 @@ function drawCover(g, src, w, h){                          // <img> を object-f
   const k = Math.max(w/sw, h/sh);
   g.drawImage(src, (w - sw*k)/2, (h - sh*k)/2, sw*k, sh*k);
 }
+
+/* ---------- ★追加: サウンド管理（BGM＋動画音声） ---------- */
+const bgm = $('#bgm');
+if(AUDIO_CONFIG.bgm) bgm.src = AUDIO_CONFIG.bgm;
+let soundOn = false, soundChosen = false, duckLevel = 0;
+try{ const saved = localStorage.getItem(AUDIO_CONFIG.storageKey); if(saved){ soundOn = saved === 'on'; soundChosen = true; } }catch(e){}
+function fadeVol(el, target, ms){
+  clearInterval(el._fadeT);
+  if(RM || !ms){ el.volume = target; return; }
+  const from = el.volume, t0 = performance.now();
+  el._fadeT = setInterval(() => {
+    const p = Math.min(1, (performance.now() - t0) / ms);
+    el.volume = from + (target - from) * p;
+    if(p >= 1) clearInterval(el._fadeT);
+  }, 40);
+}
+function startBgm(){                                    // ユーザー操作の直後（タップ/クリックの中）で呼ぶこと
+  if(!AUDIO_CONFIG.bgm) return;
+  bgm.volume = 0;
+  bgm.play().catch(() => {});
+  fadeVol(bgm, duckLevel ? AUDIO_CONFIG.duckVolume : AUDIO_CONFIG.bgmVolume, AUDIO_CONFIG.fadeMs);
+}
+function setSound(on, opts = {}){
+  soundOn = on; soundChosen = true;
+  if(opts.persist !== false){ try{ localStorage.setItem(AUDIO_CONFIG.storageKey, on ? 'on' : 'off'); }catch(e){} }
+  if(on){ startBgm(); } else { fadeVol(bgm, 0, AUDIO_CONFIG.fadeMs); setTimeout(() => { if(!soundOn) bgm.pause(); }, AUDIO_CONFIG.fadeMs + 40); }
+  syncSoundToggleUI();                                     // ★変更: 表示更新をここへ集約
+  if(dosVideoEl) dosVideoEl.muted = !soundOn;
+  }
+function syncSoundToggleUI(){                              // ★追加
+  const st = $('#soundToggle'); if(!st) return;
+  st.setAttribute('aria-checked', soundOn ? 'true' : 'false');
+  st.querySelector('.sw-label').textContent = soundOn ? 'ON' : 'OFF';
+}
+function duckBgm(on){                                    // 動画（音声あり）が再生されている間、BGMを下げる
+  duckLevel += on ? 1 : -1; duckLevel = Math.max(0, duckLevel);
+  if(soundOn && !bgm.paused) fadeVol(bgm, duckLevel ? AUDIO_CONFIG.duckVolume : AUDIO_CONFIG.bgmVolume, AUDIO_CONFIG.fadeMs);
+}
+syncSoundToggleUI();                                                    // ★追加: 保存済み設定を反映した時点の表示を合わせる
+if(!window.__soundToggleBound){                                         // ★追加: 保険
+  $('#soundToggle').addEventListener('click', () => setSound(!soundOn));
+  window.__soundToggleBound = true;
+}
+
+const sfxExplode = AUDIO_CONFIG.sfxExplode ? new Audio(AUDIO_CONFIG.sfxExplode) : null;   // ★追加: 
+if(sfxExplode) sfxExplode.preload = 'auto';
+function playExplodeSfx(){                                                                // ★追加
+  if(!soundOn || !sfxExplode) return;
+  sfxExplode.currentTime = 0; sfxExplode.volume = AUDIO_CONFIG.sfxVolume;
+  sfxExplode.play().catch(() => {});
+}
+
 initCamFeed();
 
 /* =====================================================================
@@ -1122,34 +1225,37 @@ function mountMedia(key, m){
   const item = m || {};
   const src = item.video || item.image || (key === 'cam1' ? (typeof CONFIG !== 'undefined' ? CONFIG.cameraVideo : '') : '');
   
-    if(src && isImageSrc(src)){                                        // ★追加: 画像ならポップアップは <img>
+   dosVideoEl = null;                                                   // ★追加: 前の手がかりの状態を引き継がない
+  if(src && isImageSrc(src)){                                          // 画像ならポップアップは <img>
     const im = mk('img'); im.src = src; im.alt = ''; im.draggable = false;
     im.addEventListener('error', () => im.remove());
     dMedia.appendChild(im);
     dMedia.appendChild(mk('span','dcap', item.tag ? 'RECORD ' + item.tag : 'RECORDING'));
-    }else if(src){
-    const v = mk('video'); 
-    v.src = src; 
+  }else if(src){
+    const v = mk('video');
+    v.src = src;
     if(item.poster) v.poster = item.poster;
 
-    v.muted = true; 
-    v.loop = true; 
-    v.autoplay = true; 
-    v.playsInline = true; 
-    v.setAttribute('muted',''); 
+    v.muted = !soundOn;                                                // ★変更: サウンド設定に従う（従来は常時 true）
+    if(soundOn) v.removeAttribute('muted'); else v.setAttribute('muted','');
+    v.loop = true;
+    v.autoplay = true;
+    v.playsInline = true;
     v.setAttribute('playsinline','');
-    v.setAttribute('webkit-playsinline',''); // iOS互換用
+    v.setAttribute('webkit-playsinline','');
     v.setAttribute('preload', 'auto');
 
     dMedia.appendChild(v);
+    dosVideoEl = v;                                                    // ★追加
 
-    // 再生拒否エラーが起きてもスクリプト全体を止めない安全な再生処理
     const startPlay = () => {
       const playPromise = v.play();
       if (playPromise !== undefined) {
-        playPromise.catch(err => console.warn('Video play blocked:', err));
+        playPromise.catch(() => { if(!v.muted){ v.muted = true; v.play().catch(()=>{}); } });   // ★追加: 音声あり再生が拒否された場合は無音で再生を継続
       }
     };
+    if(soundOn) v.addEventListener('playing', () => duckBgm(true), { once:true });   // ★修正
+
 
     if (v.readyState >= 2) {
       startPlay();
@@ -1160,11 +1266,11 @@ function mountMedia(key, m){
     const tagText = item.tag ? 'RECORD ' + item.tag : 'RECORDING';
     dMedia.appendChild(mk('span','dcap', key === 'cam1' ? 'CAM01 LIVE' : tagText));
   }else{
-    const c = mk('canvas'); 
-    c.width = 320; 
-    c.height = 180; 
-    dMedia.appendChild(c); 
-    dosCanvas = c; 
+    const c = mk('canvas');
+    c.width = 320;
+    c.height = 180;
+    dMedia.appendChild(c);
+    dosCanvas = c;
     dosMirror = key === 'cam1';
     dMedia.appendChild(mk('span','dcap', dosMirror ? 'CAM01 LIVE' : 'NO SIGNAL'));
   }
@@ -1181,6 +1287,7 @@ function openDossier(key){
 }
 function closeDossier(){
   if(dossierEl.hidden) return;
+  if(dosVideoEl){ duckBgm(false); dosVideoEl = null; }   // ★追加: 音声つき動画を閉じたらBGMを戻す
   const tok = ++dosToken;
   dossierEl.classList.remove('open'); dossierEl.classList.add('closing');
   document.body.classList.remove('dos-open'); setActive(null); dosKey = null;
@@ -1357,10 +1464,16 @@ function introInit(qrKey){
   }
   intro.t0 = performance.now();
   introMsg.textContent = '';
-  introEl.addEventListener('pointerdown', e => { if(intro.ready && !intro.exploded) explode(e.clientX, e.clientY); });
+  introEl.addEventListener('pointerdown', e => {
+    if(intro.ready && !intro.exploded && !soundGateOpen){    // ★変更: 確認UI表示中はタップで開始させない
+      if(soundChosen && soundOn) startBgm();                 // ★追加: 前回「音声あり」を選んでいた場合はここでBGM再生開始
+      explode(e.clientX, e.clientY);
+    }
+  });
 }
 function explode(px, py){
   if(intro.exploded) return;
+  playExplodeSfx(); 
   const now = performance.now(); intro.exploded = true; intro.exT = now; intro.ox = px; intro.oy = py;
   const { W, H, M } = intro;
   if(M){ M.Composite.remove(intro.engine.world, intro.walls); intro.engine.gravity.y = .22; }
@@ -1391,6 +1504,9 @@ function startReveal(){
 function finishIntro(){
   intro.active = false; introEl.style.display = 'none'; document.body.classList.add('ready');
 }
+let soundGateOpen = false;
+$('#sgOn').addEventListener('click', e => { soundGateOpen = false; $('#soundGate').hidden = true; introMsg.style.display = ''; setSound(true); explode(e.clientX, e.clientY); });
+$('#sgOff').addEventListener('click', e => { soundGateOpen = false; $('#soundGate').hidden = true; introMsg.style.display = ''; setSound(false, { persist:true }); explode(e.clientX, e.clientY); });
 function introTick(now, dt){
   const { W, H, dpr, ctx, M } = intro;
   if(!intro.exploded){
@@ -1401,6 +1517,7 @@ function introTick(now, dt){
       if(intro.spawned >= intro.N && now - intro.t0 >= intro.N*intro.gap + (intro.short ? 100 : 200)){
         intro.ready = true; introMsg.textContent = intro.qrKey ? '調査ボードへのアクセスを許可します' : '画面をタップして調査を開始'; introMsg.classList.add('tap');
         if(intro.qrKey) setTimeout(() => explode(W/2, H*.8), 250);
+        else if(!soundChosen && AUDIO_CONFIG.bgm){ soundGateOpen = true; introMsg.style.display = 'none'; $('#soundGate').hidden = false; }   // ★追加: 初回のみ音声確認を表示
       }
     }
   }
