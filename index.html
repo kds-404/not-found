@@ -466,7 +466,7 @@ introBg::after{content:'';position:absolute;inset:0;background:#fff;mix-blend-mo
       <div><dt>WEB</dt><dd><a href="https://instagram.com/churroigc" target="_blank" rel="noopener">T</a></dd></div>
       <div><dt>SNS</dt><dd><a href="https://instagram.com/egg___0141" target="_blank" rel="noopener">K</a></dd></div>
       <div><dt>撮影・編集</dt><dd>K&T</dd></div>
-      <div><dt>バージョン</dt><dd>v0.6.5</dd></div>
+      <div><dt>バージョン</dt><dd>v0.6.6</dd></div>
       <div><dt>公開日</dt><dd>2026.XX.XX</dd></div>
         <!-- ★追加 -->
       <div><dt>サウンド</dt><dd>
@@ -516,7 +516,7 @@ window.addEventListener('DOMContentLoaded', () => {
    ===================================================================== */
 const CONFIG = {
   BOARD: 3200,          // 盤面の一辺(px)。
-  cameraVideo: '',      // 例: 'media/cam01.mp4'。空なら疑似ライブ映像(Canvas→<video>)を自動生成
+  cameraVideo: 'media/cam01.mp4',      // 例: 'media/cam01.mp4'。空なら疑似ライブ映像(Canvas→<video>)を自動生成
   logoImage: 'media/logo.png',        // 例: 'media/logo.svg'。
   qrIntro: 'short',     
 };
@@ -533,7 +533,7 @@ const AUDIO_CONFIG = {
 };
 
 /* ★追加①: イントロで落下する画像（透過PNG）*/
-const INTRO_TEXTURES = ['media/intro01.png', 'media/intro02.png', 'media/intro03.png'];
+const INTRO_TEXTURES = ['media/intro01.png'];
 const INTRO_TEX = {
   order: 'random',   // 'random'=ランダム / 'cycle'=配列の順に繰り返し
   ratio: 1,          // 画像を使う確率 0〜1（1=全部画像 / .6=6割が画像で残りは従来の机・椅子）
@@ -542,13 +542,53 @@ const INTRO_TEX = {
 };
 
 /* ★追加③: 監視カメラ画像。添字がそのまま camId（0=通常 / 1〜10=異変） */
-const CAM_IMAGES = Array.from({ length: 8 }, (_, i) => `media/cam_${String(i).padStart(2, '0')}.jpg`);
+const CAM_IMAGES = [];
+  /* 動画のループ時にノイズ演出を割り込ませてから先頭に戻す共通関数 */
+function triggerCamLoopNoise(targetVideo, noiseVideoEl) {
+  if (!targetVideo) return;
+  
+  // ノイズ動画素材（NOISE_CLIPS）が定義されている場合
+  if (noiseVideoEl && typeof NOISE_CLIPS !== 'undefined' && NOISE_CLIPS.length) {
+    const noiseSrc = pick(NOISE_CLIPS);
+    noiseVideoEl.src = noiseSrc;
+    if (typeof NOISE_VOL !== 'undefined') noiseVideoEl.volume = NOISE_VOL;
+    noiseVideoEl.classList.add('show');
+    
+    const playPromise = noiseVideoEl.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => { finishNoise(); });
+    }
+
+    let finished = false;
+    const finishNoise = () => {
+      if (finished) return;
+      finished = true;
+      noiseVideoEl.classList.remove('show');
+      noiseVideoEl.removeEventListener('ended', finishNoise);
+      
+      // ノイズ終了後に動画を最初から再開
+      targetVideo.currentTime = 0;
+      targetVideo.play().catch(() => {});
+    };
+
+    noiseVideoEl.addEventListener('ended', finishNoise);
+    setTimeout(finishNoise, typeof NOISE_MAX_MS !== 'undefined' ? NOISE_MAX_MS : 1200);
+  } else {
+    // ノイズ動画が存在しない場合のCSSグリッチ代替処理
+    const parent = targetVideo.parentElement;
+    if (parent) parent.classList.add('is-glitching');
+    setTimeout(() => {
+      if (parent) parent.classList.remove('is-glitching');
+      targetVideo.currentTime = 0;
+      targetVideo.play().catch(() => {});
+    }, 300);
+  }
+}
 const CAM_FX = {
-  glitchMs: 320,        // グリッチの長さ(ms)。画像の差し替えはその45%地点
-  auto: true,           // true=異変をランダムに自動発生
-  every: [12, 30],      // 次の異変までの待ち時間(秒) [最小, 最大]
-  hold:  [3, 8],        // 異変を表示し続ける秒数 → その後 cam_00 に戻る
+  glitchMs: 320,
+  auto: false,          
 };
+
 const CAM_TRIGGER = { };   // 任意: 手がかりを開いた時に出す異変。例 { '001':3, '007':5 }
 /* ★追加: 場面切替の「ノイズ」を、用意した動画素材に置き換える。黒背景＋白ノイズ、音声あり前提 */
 const NOISE_CLIPS = ['media/noise_01.mp4', 'media/noise_02.mp4', 'media/noise_03.mp4', 'media/noise_04.mp4', 'media/noise_05.mp4', 'media/noise_06.mp4', 'media/noise_07.mp4', 'media/noise_08.mp4', 'media/noise_09.mp4', 'media/noise_10.mp4'];   // 複数指定でランダムに選択。空配列 [] なら従来のCSSノイズに戻る
@@ -559,31 +599,34 @@ const NOISE_VOL = 0.38;      // ★追加: ノイズ素材自体の再生音量 
 const META = {
   cam1: { tag:'CAM01', sub:'監視カメラ', title:'32教室',
     body:'度々「現象」が報告されている教室。調査中は常に状態を記録し「現象」の発生に備えている。',
-    note:'REC 2026.10.01 - 2026.10.03', video:'', poster:'', image:'' },
-  '001': { tag:'#001', sub:'拾得物', title:'3階エレベーターホール',
-    body:'前日の巡回記録には存在しない。おそらく被害者のものだろう。',
-    note:'発見 16:42 ／ 回収済', video:'', poster:'', image:'' },
+    note:'REC 2026.10.01 - 2026.10.05', video:'media/cam01.mp4', poster:'', image:'' },
+  '001': { tag:'#001', sub:'現象記録', title:'6階工作室',
+    body:'',
+    note:'発生日時：2026/05/24(日) 16:42 / 目撃者：0名', video:'media/v001.mov', poster:'', image:'' },
   '002': { tag:'#002', sub:'現象記録', title:'2階図書館',
-    body:'本棚でこのような現象が複数件目撃されている。',
-    note:'確認 14:18 ／ 目撃者：7名', video:'media/002.mp4', poster:'media/002p.jpg', image:'media/002p.jpg' },
+    body:'',
+    note:'発生日時：2026/06/28(日) 14:18 / 目撃者：0名', video:'media/v002.mp4', poster:'', image:'' },
   '003': { tag:'#003', sub:'現象記録', title:'5階エレベーターホール',
-    body:'地震のような音と共に物体が動き出したという証言がある。',
-    note:'発見 10:46 ／ 撮影：某学生', video:'media/003.mp4', poster:'media/003p.jpg', image:'media/003p.jpg'},
-  '004': { tag:'#004', sub:'遺失物', title:'某職員',
-    body:'某職員によると、授業で使用するUSBが盗まれたとのこと。',
-    note:'証言 12:56 ／ 離席中に紛失', video:'', poster:'', image:'' },
-  '006': { tag:'#006', sub:'発見物', title:'7階学生ホール',
-    body:'夜間部の学生が発見。中のデータは消去されていたという。',
-    note:'発見 17:40 ／ 所有者：████', video:'', poster:'', image:'' },
-  '007': { tag:'#007', sub:'発見物', title:'3階男子トイレ',
-    body:'被害者のものと思われる████████が見つかった。',
-    note:'発見 19:56 ／ 調査中', video:'', poster:'', image:'' },
-  '008': { tag:'#008', sub:'発見物', title:'2号館4階テラス',
-    body:'欠けている。欠けた部分がどこにあるのかは、まだ見つかっていない。',
-    note:'発見 15:31 ／ 欠損：未回収', video:'', poster:'', image:'' },
-  '009': { tag:'#009', sub:'調査記録', title:'32教室',
-    body:'調査員が学校周辺で発生している現象について調査を開始した。',
-    note:'10月某日 ／ 調査員：████', video:'', poster:'', image:'' },
+    body:'',
+    note:'発生日時：2026/08/07(金) 10:46 / 目撃者：2名', video:'media/v003.mp4', poster:'', image:''},
+  '004': { tag:'#004', sub:'現象記録', title:'6階工作室',
+    body:'',
+    note:'発生日時：2026/09/02(水) 12:56 / 目撃者：1名', video:'media/v004.mp4', poster:'', image:'' },
+  '005': { tag:'#005', sub:'発見物', title:'-',
+    body:'',
+    note:'発生日時：2026/09/14(月)- / 発見者：清掃員', video:'', poster:'', image:'' },
+  '006': { tag:'#006', sub:'現象記録', title:'7階学生ホール',
+    body:'',
+    note:'発生日時：2026/09/15(火) 17:40 / 目撃者：27名', video:'media/v006.mov', poster:'', image:'' },
+  '007': { tag:'#007', sub:'現象記録', title:'5階コンピュータ室',
+    body:'',
+    note:'発生日時：2026/09/21(月) 19:56 / 目撃者：0名', video:'media/v007.mov', poster:'', image:'' },
+  '008': { tag:'#008', sub:'現象記録', title:'1階くわかべ',
+    body:'',
+    note:'発生日時：2026/10/05(月) 15:31 / 目撃者：██名', video:'', poster:'', image:'' },
+  '009': { tag:'#009', sub:'調査記録', title:'3階32教室',
+    body:'',
+    note:'日時：10月某日 ／ 目撃者：████', video:'', poster:'', image:'' },
   victim: { tag:'被害者', sub:'', title:'氏名：████',
     body:'最後の目撃は15:12。調査中に現象に飲み込まれたとみられている。',
     note:'状態：捜索中', video:'', poster:'', image:'' },
@@ -591,7 +634,7 @@ const META = {
     body:'近頃、桑沢周辺で巻き起こっている「白昼夢」の謎。我々は現象の原因を調べるべく、「白昼夢」の調査を開始した。',
     note:'連絡先：03-46░1-▓2▒9', video:'', poster:'' },
 };
-const INDEX_ORDER = ['cam1','001','002','003','004','006','007','008','009','victim','committee'];
+const INDEX_ORDER = ['cam1','001','002','003','004','005','006','007','008','009','victim','committee'];
 const INDEX_LABEL = { cam1:'CAM01', victim:'被害者', committee:'委員会' };
 
 /* =====================================================================
@@ -726,7 +769,7 @@ LOGO_POS.forEach((p,i) => {
 
 
 /* --- 大きな桑沢 / 桑澤 / --- */
-addFloat('kuwa1', mk('div','big','<i>桑</i><i>沢</i>'), { x:1545, y:225, r:22, jit:40, rj:5, amp:1.3 });
+addFloat('kuwa1', mk('div','big','<i>桑</i><i>沢</i>'), { x:1745, y:175, r:22, jit:40, rj:5, amp:1.3 });
 addFloat('kuwa2', mk('div','kuwa2','<b>桑</b><b>澤</b><small>くわさわ</small>'), { x:1315, y:1445, r:-2, jit:40, rj:5 });
 [['くわさわ',1285,533,-24],['はくちゅうむ',177,792,-58],['ざわ',1838,1440,-22],['さわ',560,1170,20]].forEach((s,i) => {
   addFloat('scrib'+i, mk('div','scrib',s[0]), { x:s[1], y:s[2], r:s[3], jit:25, rj:10, ampR:3, amp:1.4 });
@@ -768,7 +811,7 @@ function makePic(src, css){
   im.addEventListener('error', () => im.remove());     // 読み込み失敗時は何も出さない
   return im;
 }
-const CARD_POS = [['009',152,387],['007',1000,495],['004',1754,597],['008',377,945],['006',137,1285],['002',1526,1156],['001',1703,1535],['003',618,1693]];
+const CARD_POS = [['009',152,387],['007',1000,495],['004',1754,597],['005',1400,200],['008',377,945],['006',137,1285],['002',1526,1156],['001',1703,1535],['003',618,1693]];
 CARD_POS.forEach((c,i) => {
   const el = mk('div','card'); el.dataset.key = c[0];
   el.innerHTML = `<span class="lab">#${c[0]}</span>`;
@@ -843,10 +886,10 @@ for(let i=0;i<70;i++){
 /* --- 捜査線（赤い糸）: 要素の座標に追従して毎フレーム更新 --- */
 const EDGES = [
   ['cap:know','009'],['009','008'],['009','victim'],['victim','002'],['victim','001'],['002','003'],
-  ['cap:cause','003'],['cap:cond','001'],['007','006'],['007','logo3'],['cap:seen','004'],['004','006'],
+  ['cap:cause','003'],['cap:cond','001'],['007','006'],['007','logo3'],['cap:seen','007'],['004','005'],['002','005']
 ];
-{ const ks = ['001','002','003','004','006','007','008','009','victim'];
-  for(let n=0;n<2;n++){ // 毎回ちがう線を2本だけ追加
+{ const ks = ['001','002','003','004','005','006','007','008','009','victim'];
+  for(let n=0;n<1;n++){ // 毎回ちがう線を追加
     const a = pick(ks), b = pick(ks);
     if(a !== b && !EDGES.some(e => (e[0]===a&&e[1]===b)||(e[0]===b&&e[1]===a))) EDGES.push([a,b]);
   }
@@ -897,23 +940,39 @@ window.addEventListener('load', measure);
 let camMode = 'canvas';
 function initCamFeed(){
   camVideo.addEventListener('playing', () => camVideo.classList.add('on'));
-  if(CAM_IMAGES.length){                                   // ★追加ここから: cam_00 が初期表示
-    camMode = 'image'; camCur = 0; camImgEl.src = CAM_IMAGES[0];
-    camImgEl.addEventListener('load', () => { camImgEl.style.visibility = ''; camMode = 'image'; });
-    camImgEl.addEventListener('error', () => { camImgEl.style.visibility = 'hidden'; camMode = 'canvas'; });   // 失敗時は従来の疑似映像
-    if (!isMobile) {CAM_IMAGES.forEach(u => {new Image().src = u;});}    // 先読み
-    return;
-  }                                                        // ★追加ここまで
+  
   if(CONFIG.cameraVideo){
     camMode = 'video';
     camVideo.src = CONFIG.cameraVideo;
+    camVideo.removeAttribute('loop'); // JSで終端（ループ時）のノイズ演出を拾うため属性を除去
     camVideo.play().catch(() => {});
+    
+    // 映像が終端に達した（ループする）タイミングでノイズ演出を発生させる
+    camVideo.addEventListener('ended', () => {
+      triggerCamLoopNoise(camVideo, camNoiseVid);
+    });
     return;
   }
-  try{ // Canvas の映像を <video> に流し込む（常時ループ再生の <video> として動作）
-    if(camCanvas.captureStream){ camVideo.srcObject = camCanvas.captureStream(24); camVideo.play().catch(() => {}); }
-  }catch(err){ /* 失敗時は Canvas がそのまま見える */ }
 }
+// function initCamFeed(){
+//   camVideo.addEventListener('playing', () => camVideo.classList.add('on'));
+//   if(CAM_IMAGES.length){                                   // ★追加ここから: cam_00 が初期表示
+//     camMode = 'image'; camCur = 0; camImgEl.src = CAM_IMAGES[0];
+//     camImgEl.addEventListener('load', () => { camImgEl.style.visibility = ''; camMode = 'image'; });
+//     camImgEl.addEventListener('error', () => { camImgEl.style.visibility = 'hidden'; camMode = 'canvas'; });   // 失敗時は従来の疑似映像
+//     if (!isMobile) {CAM_IMAGES.forEach(u => {new Image().src = u;});}    // 先読み
+//     return;
+//   }                                                        // ★追加ここまで
+//   if(CONFIG.cameraVideo){
+//     camMode = 'video';
+//     camVideo.src = CONFIG.cameraVideo;
+//     camVideo.play().catch(() => {});
+//     return;
+//   }
+//   try{ // Canvas の映像を <video> に流し込む（常時ループ再生の <video> として動作）
+//     if(camCanvas.captureStream){ camVideo.srcObject = camCanvas.captureStream(24); camVideo.play().catch(() => {}); }
+//   }catch(err){ /* 失敗時は Canvas がそのまま見える */ }
+// }
 
 function drawCam(t){
   const g = camCtx, W = 320, H = 180;
@@ -1107,6 +1166,8 @@ if(!window.__soundToggleBound){                                         // ★�
   $('#soundToggle').addEventListener('click', () => setSound(!soundOn));
   window.__soundToggleBound = true;
 }
+
+
 
 const sfxExplode = AUDIO_CONFIG.sfxExplode ? new Audio(AUDIO_CONFIG.sfxExplode) : null;   // ★追加: 
 if(sfxExplode) sfxExplode.preload = 'auto';
@@ -1393,7 +1454,19 @@ function openDossier(key){
   dosKey = key; dosToken++;
   $('#dTag').textContent = m.tag; $('#dSub').textContent = m.sub || '';
   $('#dTitle').textContent = m.title; $('#dBody').textContent = m.body; $('#dNote').textContent = m.note || '';
+  
+  // メディア（画像・動画等）の描画処理
   mountMedia(key, m);
+
+  // ★追加：ポップアップ内の動画（#001等）に対するループ時ノイズ処理の設定
+  const dosVid = $('#dMedia video');
+  if (dosVid) {
+    dosVid.removeAttribute('loop'); // 標準ループを解除
+    dosVid.addEventListener('ended', () => {
+      const dosNoise = $('#dMedia .dosNoiseVid') || $('#dMedia video.dosNoiseVid');
+      triggerCamLoopNoise(dosVid, dosNoise);
+    });
+  }
   dossierEl.hidden = false; dossierEl.classList.remove('closing'); void dossierEl.offsetWidth; dossierEl.classList.add('open');
   document.body.classList.add('dos-open'); setActive(key);
 }
