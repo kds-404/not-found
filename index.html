@@ -361,7 +361,7 @@ body.dos-open #infoBtn{opacity:0;pointer-events:none}   /* 手がかり詳細が
     /* 壁・床の縦ストライプ模様（グレー系） */
     repeating-linear-gradient(90deg, #4a4a4a 0 46px, #3f3f3f 46px 50px, #4a4a4a 50px 52px, #353535 52px 54px);
 }
-introBg::after{content:'';position:absolute;inset:0;background:#fff;mix-blend-mode:soft-light;opacity:0;animation:flick 3.2s steps(1) infinite}
+#introBg::after{content:'';position:absolute;inset:0;background:#fff;mix-blend-mode:soft-light;opacity:0;animation:flick 3.2s steps(1) infinite}
 #introCanvas{position:absolute;inset:0;width:100%;height:100%}
 #introUI{position:absolute;inset:0;pointer-events:none;transition:opacity .25s}
 #introUI.gone{opacity:0}
@@ -466,7 +466,7 @@ introBg::after{content:'';position:absolute;inset:0;background:#fff;mix-blend-mo
       <div><dt>WEB</dt><dd><a href="https://instagram.com/churroigc" target="_blank" rel="noopener">T</a></dd></div>
       <div><dt>SNS</dt><dd><a href="https://instagram.com/egg___0141" target="_blank" rel="noopener">K</a></dd></div>
       <div><dt>撮影・編集</dt><dd>K&T</dd></div>
-      <div><dt>バージョン</dt><dd>v0.6.6</dd></div>
+      <div><dt>バージョン</dt><dd>v0.6.8</dd></div>
       <div><dt>公開日</dt><dd>2026.XX.XX</dd></div>
         <!-- ★追加 -->
       <div><dt>サウンド</dt><dd>
@@ -542,52 +542,52 @@ const INTRO_TEX = {
 };
 
 /* ★追加③: 監視カメラ画像。添字がそのまま camId（0=通常 / 1〜10=異変） */
-const CAM_IMAGES = [];
+// const CAM_IMAGES = [];
   /* 動画のループ時にノイズ演出を割り込ませてから先頭に戻す共通関数 */
-function triggerCamLoopNoise(targetVideo, noiseVideoEl) {
-  if (!targetVideo) return;
+// function triggerCamLoopNoise(targetVideo, noiseVideoEl) {
+//   if (!targetVideo) return;
   
-  // ノイズ動画素材（NOISE_CLIPS）が定義されている場合
-  if (noiseVideoEl && typeof NOISE_CLIPS !== 'undefined' && NOISE_CLIPS.length) {
-    const noiseSrc = pick(NOISE_CLIPS);
-    noiseVideoEl.src = noiseSrc;
-    if (typeof NOISE_VOL !== 'undefined') noiseVideoEl.volume = NOISE_VOL;
-    noiseVideoEl.classList.add('show');
+//   // ノイズ動画素材（NOISE_CLIPS）が定義されている場合
+//   if (noiseVideoEl && typeof NOISE_CLIPS !== 'undefined' && NOISE_CLIPS.length) {
+//     const noiseSrc = pick(NOISE_CLIPS);
+//     noiseVideoEl.src = noiseSrc;
+//     if (typeof NOISE_VOL !== 'undefined') noiseVideoEl.volume = NOISE_VOL;
+//     noiseVideoEl.classList.add('show');
     
-    const playPromise = noiseVideoEl.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(() => { finishNoise(); });
-    }
+//     const playPromise = noiseVideoEl.play();
+//     if (playPromise !== undefined) {
+//       playPromise.catch(() => { finishNoise(); });
+//     }
 
-    let finished = false;
-    const finishNoise = () => {
-      if (finished) return;
-      finished = true;
-      noiseVideoEl.classList.remove('show');
-      noiseVideoEl.removeEventListener('ended', finishNoise);
+//     let finished = false;
+//     const finishNoise = () => {
+//       if (finished) return;
+//       finished = true;
+//       noiseVideoEl.classList.remove('show');
+//       noiseVideoEl.removeEventListener('ended', finishNoise);
       
-      // ノイズ終了後に動画を最初から再開
-      targetVideo.currentTime = 0;
-      targetVideo.play().catch(() => {});
-    };
+//       // ノイズ終了後に動画を最初から再開
+//       targetVideo.currentTime = 0;
+//       targetVideo.play().catch(() => {});
+//     };
 
-    noiseVideoEl.addEventListener('ended', finishNoise);
-    setTimeout(finishNoise, typeof NOISE_MAX_MS !== 'undefined' ? NOISE_MAX_MS : 1200);
-  } else {
-    // ノイズ動画が存在しない場合のCSSグリッチ代替処理
-    const parent = targetVideo.parentElement;
-    if (parent) parent.classList.add('is-glitching');
-    setTimeout(() => {
-      if (parent) parent.classList.remove('is-glitching');
-      targetVideo.currentTime = 0;
-      targetVideo.play().catch(() => {});
-    }, 300);
-  }
-}
-const CAM_FX = {
-  glitchMs: 320,
-  auto: false,          
-};
+//     noiseVideoEl.addEventListener('ended', finishNoise);
+//     setTimeout(finishNoise, typeof NOISE_MAX_MS !== 'undefined' ? NOISE_MAX_MS : 1200);
+//   } else {
+//     // ノイズ動画が存在しない場合のCSSグリッチ代替処理
+//     const parent = targetVideo.parentElement;
+//     if (parent) parent.classList.add('is-glitching');
+//     setTimeout(() => {
+//       if (parent) parent.classList.remove('is-glitching');
+//       targetVideo.currentTime = 0;
+//       targetVideo.play().catch(() => {});
+//     }, 300);
+//   }
+// }
+// const CAM_FX = {
+//   glitchMs: 320,
+//   auto: false,          
+// };
 
 const CAM_TRIGGER = { };   // 任意: 手がかりを開いた時に出す異変。例 { '001':3, '007':5 }
 /* ★追加: 場面切替の「ノイズ」を、用意した動画素材に置き換える。黒背景＋白ノイズ、音声あり前提 */
@@ -1026,15 +1026,15 @@ function camStamp(){
   
   return `${jst.getFullYear()}.${P2(jst.getMonth()+1)}.${P2(jst.getDate())} ${P2(jst.getHours())}:${P2(jst.getMinutes())}:${P2(jst.getSeconds())}`;
 }
-window.switchCamImage = switchCamImage;   // コンソールから switchCamImage(3) で確認できるように公開
-function camAutoLoop(){
-  if(!CAM_FX.auto || CAM_IMAGES.length < 2) return;
-  camAutoT = setTimeout(() => {
-    if(document.hidden || intro.active){ camAutoLoop(); return; }
-    switchCamImage(1 + Math.floor(Math.random()*(CAM_IMAGES.length - 1)));   // 1〜10 からランダム
-    camAutoT = setTimeout(() => { switchCamImage(0); camAutoLoop(); }, rand(...CAM_FX.hold)*1000);
-  }, rand(...CAM_FX.every)*1000);
-}
+// window.switchCamImage = switchCamImage;   // コンソールから switchCamImage(3) で確認できるように公開
+// function camAutoLoop(){
+//   if(!CAM_FX.auto || CAM_IMAGES.length < 2) return;
+//   camAutoT = setTimeout(() => {
+//     if(document.hidden || intro.active){ camAutoLoop(); return; }
+//     switchCamImage(1 + Math.floor(Math.random()*(CAM_IMAGES.length - 1)));   // 1〜10 からランダム
+//     camAutoT = setTimeout(() => { switchCamImage(0); camAutoLoop(); }, rand(...CAM_FX.hold)*1000);
+//   }, rand(...CAM_FX.every)*1000);
+// }
 function drawCover(g, src, w, h){                          // <img> を object-fit:cover 相当で Canvas に描く
   const sw = src.naturalWidth, sh = src.naturalHeight; if(!sw || !sh) return;
   const k = Math.max(w/sw, h/sh);
@@ -1106,22 +1106,22 @@ function runNoiseTransition(onSwap){
   });
   return true;
 }
-/* ★追加③: 画像切り替え＋グリッチ */
-function switchCamImage(camId, o = {}){
-  if(!CAM_IMAGES.length || !camImgEl) return;
-  const id = clamp(parseInt(camId, 10) || 0, 0, CAM_IMAGES.length - 1);
-  if(id === camCur && !o.force) return;
-  const swap = () => { camImgEl.src = CAM_IMAGES[id]; camCur = id; };
-  if(runNoiseTransition(swap)) return;                              // ★変更: 素材があれば動画トランジションを使う
-  // ↓ 従来のCSSノイズ（NOISE_CLIPS が空、または reduced-motion の場合のフォールバック）
-  const dur = RM ? 0 : (o.glitchMs != null ? o.glitchMs : CAM_FX.glitchMs);
-  const boxes = [camImgEl.parentNode, dMedia];
-  clearTimeout(camSwapT); clearTimeout(camGlitchT);
-  if(dur <= 0){ swap(); return; }
-  boxes.forEach(b => { b.classList.remove('is-glitching'); void b.offsetWidth; b.classList.add('is-glitching'); });
-  camSwapT = setTimeout(swap, dur*.45);
-  camGlitchT = setTimeout(() => boxes.forEach(b => b.classList.remove('is-glitching')), dur);
-}
+// /* ★追加③: 画像切り替え＋グリッチ */
+// function switchCamImage(camId, o = {}){
+//   if(!CAM_IMAGES.length || !camImgEl) return;
+//   const id = clamp(parseInt(camId, 10) || 0, 0, CAM_IMAGES.length - 1);
+//   if(id === camCur && !o.force) return;
+//   const swap = () => { camImgEl.src = CAM_IMAGES[id]; camCur = id; };
+//   if(runNoiseTransition(swap)) return;                              // ★変更: 素材があれば動画トランジションを使う
+//   // ↓ 従来のCSSノイズ（NOISE_CLIPS が空、または reduced-motion の場合のフォールバック）
+//   const dur = RM ? 0 : (o.glitchMs != null ? o.glitchMs : CAM_FX.glitchMs);
+//   const boxes = [camImgEl.parentNode, dMedia];
+//   clearTimeout(camSwapT); clearTimeout(camGlitchT);
+//   if(dur <= 0){ swap(); return; }
+//   boxes.forEach(b => { b.classList.remove('is-glitching'); void b.offsetWidth; b.classList.add('is-glitching'); });
+//   camSwapT = setTimeout(swap, dur*.45);
+//   camGlitchT = setTimeout(() => boxes.forEach(b => b.classList.remove('is-glitching')), dur);
+// }
 
 
 /* ---------- ★追加: サウンド管理（BGM＋動画音声） ---------- */
@@ -1364,7 +1364,7 @@ function focusView(key){
 }
 function selectItem(key, o={}){
   if(!byKey[key] || !META[key]) return Promise.resolve(false);
-  if(CAM_TRIGGER[key] != null) switchCamImage(CAM_TRIGGER[key]);   // ★追加
+  // if(CAM_TRIGGER[key] != null) switchCamImage(CAM_TRIGGER[key]); // ★削除（mountMediaで動画連動を行うため不要）
   const v = focusView(key);
   if(!o.delayOpen) openDossier(key);
   const p = flyTo(v.x, v.y, v.s, { ax:v.ax, ay:v.ay, dur:o.dur || 1100, ease:o.ease });
@@ -1375,7 +1375,8 @@ function selectItem(key, o={}){
 const dossierEl = $('#dossier'), dMedia = $('#dMedia');
 let dosToken = 0, dosKey = null, dosCanvas = null, dosMirror = false;
 function setActive(key){ floaters.forEach(f => f.el.classList.remove('active')); if(key && byKey[key]) byKey[key].el.classList.add('active'); }
-// ⭕ 修正版 mountMedia 関数
+
+// ⭕ 修正版 mountMedia 関数（9/25）
 function mountMedia(key, m){
   dMedia.innerHTML = ''; dosCanvas = null; dosMirror = false;
 
@@ -1383,13 +1384,21 @@ function mountMedia(key, m){
   const item = m || {};
   const src = item.video || item.image || (key === 'cam1' ? (typeof CONFIG !== 'undefined' ? CONFIG.cameraVideo : '') : '');
   
-   dosVideoEl = null;                                                   // ★追加: 前の手がかりの状態を引き継がない
-   dosNoiseVid = null;   // ★追加: ノイズ・トランジション用videoも同様にリセット
+  dosVideoEl = null;                                                   // ★追加: 前の手がかりの状態を引き継がない
+  dosNoiseVid = null;   // ★追加: ノイズ・トランジション用videoも同様にリセット
+
   if(src && isImageSrc(src)){                                          // 画像ならポップアップは <img>
     const im = mk('img'); im.src = src; im.alt = ''; im.draggable = false;
     im.addEventListener('error', () => im.remove());
     dMedia.appendChild(im);
     dMedia.appendChild(mk('span','dcap', item.tag ? 'RECORD ' + item.tag : 'RECORDING'));
+
+    // ★盤面カメラの連動: 画像の手がかり時は盤面カメラを初期動画に戻す
+    if(camVideo && typeof CONFIG !== 'undefined' && CONFIG.cameraVideo){
+      camVideo.src = CONFIG.cameraVideo;
+      camVideo.play().catch(() => {});
+    }
+
   }else if(src){
     const v = mk('video');
     v.src = src;
@@ -1405,7 +1414,14 @@ function mountMedia(key, m){
     v.setAttribute('preload', 'auto');
 
     dMedia.appendChild(v);
-    dosVideoEl = v;                                                    // ★追加
+    dosVideoEl = v;
+
+    // ★盤面カメラの連動: 動画手がかりを開いた場合、盤面カメラにも同じ動画を流す
+    if(camVideo && item.video){
+      camVideo.src = item.video;
+      camVideo.play().catch(() => {});
+    }
+
     // ★追加: 動画の再生開始・ループ（seeked）時にグリッチ演出を発火
     v.addEventListener('play', () => {
       triggerMediaGlitch(dMedia, 400);
@@ -1413,9 +1429,6 @@ function mountMedia(key, m){
     v.addEventListener('seeked', () => {
       triggerMediaGlitch(dMedia, 500);
     });
-
-    dMedia.appendChild(v);
-    dosVideoEl = v;
 
     const startPlay = () => {
       const playPromise = v.play();
@@ -1425,7 +1438,6 @@ function mountMedia(key, m){
     };
     if(soundOn) v.addEventListener('playing', () => duckBgm(true), { once:true });   // ★修正
 
-
     if (v.readyState >= 2) {
       startPlay();
     } else {
@@ -1434,6 +1446,7 @@ function mountMedia(key, m){
 
     const tagText = item.tag ? 'RECORD ' + item.tag : 'RECORDING';
     dMedia.appendChild(mk('span','dcap', key === 'cam1' ? 'CAM01 LIVE' : tagText));
+
   }else{
     const c = mk('canvas');
     c.width = 320;
@@ -1442,13 +1455,94 @@ function mountMedia(key, m){
     dosCanvas = c;
     dosMirror = key === 'cam1';
     if(dosMirror){                                                     // ★追加: CAM01を開いている時だけ、ノイズ・トランジション用videoを用意
-    dosNoiseVid = mk('video','dosNoiseVid'); dosNoiseVid.muted = true; dosNoiseVid.setAttribute('playsinline','');
-    dMedia.appendChild(dosNoiseVid);
-}
-dMedia.appendChild(mk('span','dcap', dosMirror ? 'CAM01 LIVE' : 'NO SIGNAL'));
+      dosNoiseVid = mk('video','dosNoiseVid'); dosNoiseVid.muted = true; dosNoiseVid.setAttribute('playsinline','');
+      dMedia.appendChild(dosNoiseVid);
+    }
+    dMedia.appendChild(mk('span','dcap', dosMirror ? 'CAM01 LIVE' : 'NO SIGNAL'));
+
+    // ★盤面カメラの連動: メディアなしの場合は盤面カメラを初期動画に戻す
+    if(camVideo && typeof CONFIG !== 'undefined' && CONFIG.cameraVideo){
+      camVideo.src = CONFIG.cameraVideo;
+      camVideo.play().catch(() => {});
+    }
   }
   dMedia.appendChild(mk('i','drec'));
 }
+
+// // ⭕ 修正版(前回9/24版) mountMedia 関数
+// function mountMedia(key, m){
+//   dMedia.innerHTML = ''; dosCanvas = null; dosMirror = false;
+
+//   // m が undefined や null の場合でもエラーで止まらないよう保護
+//   const item = m || {};
+//   const src = item.video || item.image || (key === 'cam1' ? (typeof CONFIG !== 'undefined' ? CONFIG.cameraVideo : '') : '');
+  
+//    dosVideoEl = null;                                                   // ★追加: 前の手がかりの状態を引き継がない
+//    dosNoiseVid = null;   // ★追加: ノイズ・トランジション用videoも同様にリセット
+//   if(src && isImageSrc(src)){                                          // 画像ならポップアップは <img>
+//     const im = mk('img'); im.src = src; im.alt = ''; im.draggable = false;
+//     im.addEventListener('error', () => im.remove());
+//     dMedia.appendChild(im);
+//     dMedia.appendChild(mk('span','dcap', item.tag ? 'RECORD ' + item.tag : 'RECORDING'));
+//   }else if(src){
+//     const v = mk('video');
+//     v.src = src;
+//     if(item.poster) v.poster = item.poster;
+
+//     v.muted = !soundOn;                                                // ★変更: サウンド設定に従う（従来は常時 true）
+//     if(soundOn) v.removeAttribute('muted'); else v.setAttribute('muted','');
+//     v.loop = true;
+//     v.autoplay = true;
+//     v.playsInline = true;
+//     v.setAttribute('playsinline','');
+//     v.setAttribute('webkit-playsinline','');
+//     v.setAttribute('preload', 'auto');
+
+//     dMedia.appendChild(v);
+//     dosVideoEl = v;                                                    // ★追加
+//     // ★追加: 動画の再生開始・ループ（seeked）時にグリッチ演出を発火
+//     v.addEventListener('play', () => {
+//       triggerMediaGlitch(dMedia, 400);
+//     });
+//     v.addEventListener('seeked', () => {
+//       triggerMediaGlitch(dMedia, 500);
+//     });
+
+//     dMedia.appendChild(v);
+//     dosVideoEl = v;
+
+//     const startPlay = () => {
+//       const playPromise = v.play();
+//       if (playPromise !== undefined) {
+//         playPromise.catch(() => { if(!v.muted){ v.muted = true; v.play().catch(()=>{}); } });   // ★追加: 音声あり再生が拒否された場合は無音で再生を継続
+//       }
+//     };
+//     if(soundOn) v.addEventListener('playing', () => duckBgm(true), { once:true });   // ★修正
+
+
+//     if (v.readyState >= 2) {
+//       startPlay();
+//     } else {
+//       v.addEventListener('loadeddata', startPlay, { once: true });
+//     }
+
+//     const tagText = item.tag ? 'RECORD ' + item.tag : 'RECORDING';
+//     dMedia.appendChild(mk('span','dcap', key === 'cam1' ? 'CAM01 LIVE' : tagText));
+//   }else{
+//     const c = mk('canvas');
+//     c.width = 320;
+//     c.height = 180;
+//     dMedia.appendChild(c);
+//     dosCanvas = c;
+//     dosMirror = key === 'cam1';
+//     if(dosMirror){                                                     // ★追加: CAM01を開いている時だけ、ノイズ・トランジション用videoを用意
+//     dosNoiseVid = mk('video','dosNoiseVid'); dosNoiseVid.muted = true; dosNoiseVid.setAttribute('playsinline','');
+//     dMedia.appendChild(dosNoiseVid);
+// }
+// dMedia.appendChild(mk('span','dcap', dosMirror ? 'CAM01 LIVE' : 'NO SIGNAL'));
+//   }
+//   dMedia.appendChild(mk('i','drec'));
+// }
 function openDossier(key){
   const m = META[key]; if(!m) return;
   dosKey = key; dosToken++;
@@ -1472,10 +1566,16 @@ function openDossier(key){
 }
 function closeDossier(){
   if(dossierEl.hidden) return;
-  if(dosVideoEl){ duckBgm(false); dosVideoEl = null; }   // ★追加: 音声つき動画を閉じたらBGMを戻す
   const tok = ++dosToken;
   dossierEl.classList.remove('open'); dossierEl.classList.add('closing');
   document.body.classList.remove('dos-open'); setActive(null); dosKey = null;
+
+  // ★追加: 詳細を閉じたら盤面の監視カメラ(camVideo)を初期動画に戻す
+  if(camVideo && CONFIG.cameraVideo){
+    camVideo.src = CONFIG.cameraVideo;
+    camVideo.play().catch(() => {});
+  }
+
   setTimeout(() => { if(tok === dosToken){ dossierEl.hidden = true; dMedia.innerHTML = ''; dosCanvas = null; } }, 380);
 }
 $('#dClose').addEventListener('click', closeDossier);
@@ -1811,7 +1911,7 @@ addEventListener('resize', () => {
     introMsg.textContent = '読み込み中…';
     preloadIntroTextures().then(() => introInit(qrKey));
   }
-  camAutoLoop();                                                        // ★追加（③の異変の自動発生）
+  // camAutoLoop();                                                        // ★追加（③の異変の自動発生）
   requestAnimationFrame(tick);
 })();
 
