@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#262626">
 <title>白昼夢現象調査委員会</title>
+<script>
+(function(){
+  const ICONS = ['media/fa-01.jpg', 'media/fa-02.png', 'media/fa-03.png','media/fa-04.png']; 
+  const pick = ICONS[Math.floor(Math.random() * ICONS.length)];
+  let link = document.querySelector('link[rel="icon"]');
+  if(!link){ link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+  link.href = pick;
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Shippori+Mincho:wght@400;500;800&display=swap" rel="stylesheet">
@@ -267,7 +276,9 @@ body.dos-open #infoBtn{opacity:0;pointer-events:none}   /* 手がかり詳細が
   color:#e8e8e8;overflow:visible;
   -webkit-user-select:text;user-select:text;         /* body 全体の user-select:none を上書き（URL等をコピー可能に） */
 }
-#infoDlg::backdrop{background:rgba(0,0,0,.74);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+@media (max-width:768px){
+  #infoDlg::backdrop{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(0,0,0,.88)}
+}
 .info{
   position:relative;padding:28px 24px 22px;
   max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);overflow:auto;
@@ -466,7 +477,7 @@ body.dos-open #infoBtn{opacity:0;pointer-events:none}   /* 手がかり詳細が
       <div><dt>WEB</dt><dd><a href="https://instagram.com/churroigc" target="_blank" rel="noopener">T</a></dd></div>
       <div><dt>SNS</dt><dd><a href="https://instagram.com/egg___0141" target="_blank" rel="noopener">K</a></dd></div>
       <div><dt>撮影・編集</dt><dd>K&T</dd></div>
-      <div><dt>バージョン</dt><dd>v0.6.8</dd></div>
+      <div><dt>バージョン</dt><dd>v0.7.0</dd></div>
       <div><dt>公開日</dt><dd>2026.XX.XX</dd></div>
         <!-- ★追加 -->
       <div><dt>サウンド</dt><dd>
@@ -845,7 +856,7 @@ let dosVideoEl = null;
 let dosNoiseVid = null;   // ★追加: ポップアップ側（CAM01を開いている時のみ）のノイズ・トランジション用 <video>
 {
   const el = mk('div','cam'); el.dataset.key = 'cam1';
-  el.innerHTML = '<div class="scr"><canvas width="320" height="180"></canvas><video muted loop playsinline autoplay preload="auto"></video><img class="camimg" alt=""><video class="camNoiseVid" muted playsinline preload="auto"></video><div class="tint"></div><div class="scan"></div><div class="roll"></div>'
+  el.innerHTML = '<div class="scr"><canvas width="320" height="180"></canvas><video muted loop playsinline autoplay preload="metadata"></video><img class="camimg" alt=""><video class="camNoiseVid" muted playsinline preload="none"></video><div class="tint"></div><div class="scan"></div><div class="roll"></div>'
   + '<span class="lbl">監視カメラ</span><span class="cid">CAM01</span><span class="ts"></span></div><i class="rec"></i>';
   camCanvas = el.querySelector('canvas'); camVideo = el.querySelector('video'); camTs = el.querySelector('.ts'); camImgEl = el.querySelector('.camimg'); camNoiseVid = el.querySelector('.camNoiseVid');   // ★変更: camNoiseVid を追加
   camVideo.muted = true; camVideo.setAttribute('muted',''); camVideo.playsInline = true;
@@ -1843,6 +1854,7 @@ function introTick(now, dt){
 let lastNow = performance.now(), frameN = 0, lastCam = 0, lastDos = 0;
 function tick(now){
   requestAnimationFrame(tick);
+  if(document.hidden) return;
   const dt = Math.min(now - lastNow, 50); lastNow = now; frameN++;
   const t = now/1000;
   if(flight) flight.step(now);
@@ -1860,7 +1872,7 @@ function tick(now){
   }
   if(camMode === 'canvas' && now - lastCam > 41){ lastCam = now; drawCam(t); }
   const st = camStamp(); if(st !== lastStamp){ lastStamp = st; camTs.textContent = st; }
-  if(dosCanvas && now - lastDos > 66){
+  if(dosCanvas && now - lastDos > (isMobile ? 130 : 66)){   // ★変更
     lastDos = now; const g = dosCanvas.getContext('2d');
     if(dosMirror){
       if(camMode === 'image') drawCover(g, camImgEl, dosCanvas.width, dosCanvas.height); else g.drawImage(camCanvas, 0, 0);
