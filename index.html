@@ -477,7 +477,7 @@ body.dos-open #infoBtn{opacity:0;pointer-events:none}   /* 手がかり詳細が
       <div><dt>WEB</dt><dd><a href="https://instagram.com/churroigc" target="_blank" rel="noopener">T</a></dd></div>
       <div><dt>SNS</dt><dd><a href="https://instagram.com/egg___0141" target="_blank" rel="noopener">K</a></dd></div>
       <div><dt>撮影・編集</dt><dd>K&T</dd></div>
-      <div><dt>バージョン</dt><dd>v0.7.0</dd></div>
+      <div><dt>バージョン</dt><dd>v0.7.1</dd></div>
       <div><dt>公開日</dt><dd>2026.XX.XX</dd></div>
         <!-- ★追加 -->
       <div><dt>サウンド</dt><dd>
@@ -1750,7 +1750,7 @@ function introInit(qrKey){
   const { W, H } = intro;
   intro.u = clamp(Math.min(W, H*1.2)/9, 38, 112); intro.floorY = H*.95;
   intro.short = !!qrKey && CONFIG.qrIntro === 'short';
-  intro.N = intro.short ? 12 : Math.round(clamp(W/intro.u*1.5, 14, 22)); intro.gap = intro.short ? 75 : 130;
+  intro.N = intro.short ? (isMobile ? 8 : 12) : Math.round(clamp(W/intro.u*1.5, isMobile ? 6 : 12, isMobile ? 16 : 22)); intro.gap = intro.short ? 75 : 130;
   const M = window.Matter; intro.M = M || null;
   if(M){
     intro.engine = M.Engine.create({ positionIterations:8, velocityIterations:6 }); intro.engine.gravity.y = 1.1;
