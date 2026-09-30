@@ -4,10 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#262626">
+<!-- スマホ向け: 日時や番号の自動リンク化を止める / ホーム画面追加時にフルスクリーン表示 -->
+<meta name="format-detection" content="telephone=no,date=no,address=no,email=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>白昼夢現象調査委員会</title>
 <script>
 (function(){
-  const ICONS = ['media/fa-00.png', 'media/fa-01.png', 'media/fa-02.png', 'media/fa-03.png','media/fa-04.png']; 
+  const ICONS = ['assets/fa-00.png', 'assets/fa-01.png', 'assets/fa-02.png', 'assets/fa-03.png','assets/fa-04.png']; 
   const pick = ICONS[Math.floor(Math.random() * ICONS.length)];
   let link = document.querySelector('link[rel="icon"]');
   if(!link){ link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
@@ -30,7 +35,7 @@
   --red:#ff2a2a;
   --paper:#b3b3b3;
 }
-html,body{margin:0;height:100%;background:#262626;overflow:hidden;overscroll-behavior:none;
+html,body{margin:0;height:100%;background:#262626;overflow:hidden;overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%;
   -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;
   -webkit-overflow-scrolling: touch;scroll-behavior: smooth;touch-action: manipulation;
   font-family:var(--serif);color:#fff}
@@ -216,7 +221,7 @@ body.ready #hud{opacity:1}
 #hudBtns{position:absolute;left:max(14px,env(safe-area-inset-left));bottom:max(14px,env(safe-area-inset-bottom));display:flex;gap:8px;align-items:flex-end;pointer-events:auto}
 #hudCoord{font:11px/1 var(--mono);color:rgba(255,255,255,.5);letter-spacing:.06em;margin-right:6px;align-self:center;text-shadow:0 1px 3px #000}
 .hb{min-width:40px;height:40px;padding:0 10px;border:1px solid rgba(255,255,255,.4);background:rgba(20,20,20,.6);color:#fff;font:500 13px/1 var(--serif);letter-spacing:.08em;cursor:pointer;border-radius:0}
-.hb:hover{background:rgba(70,70,70,.8)}
+@media (hover:hover){ .hb:hover{background:rgba(70,70,70,.8)} }
 .hb:focus-visible,.dclose:focus-visible{outline:2px solid #fff;outline-offset:2px}
 #index{position:absolute;left:max(14px,env(safe-area-inset-left));bottom:calc(max(14px,env(safe-area-inset-bottom)) + 52px);display:none;flex-wrap:wrap;gap:6px;max-width:min(340px,calc(100vw - 28px));pointer-events:auto}
 #index.open{display:flex}
@@ -301,6 +306,9 @@ body.dos-open #infoBtn{opacity:0;pointer-events:none}   /* 手がかり詳細が
 .info-list dd{margin:0;font:400 14px/1.7 var(--serif);letter-spacing:.06em;color:#f2f2f2;word-break:break-word}
 .info-list a,.info-note a{color:#fff;text-decoration:underline;text-underline-offset:3px}
 .info-note{margin:16px 0 18px;font:400 11px/1.9 var(--serif);letter-spacing:.06em;color:rgba(255,255,255,.5)}
+.info-note a {
+  color: inherit;
+}
 .info-actions{display:flex;justify-content:center}
 .info-close{
   min-height:44px;padding:0 34px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.06);
@@ -390,6 +398,62 @@ body.dos-open #infoBtn{opacity:0;pointer-events:none}   /* 手がかり詳細が
   #app.shake{animation:none}
   .dcard{animation:none}
 }
+
+/* =====================================================================
+   モバイル最適化  ※ PC表示（マウス操作・広い画面）には影響しない指定のみ
+   ・レイアウト系 … @media（pointer:coarse / 幅 / 向き）
+   ・負荷軽減系   … body.is-mobile（JSがUA判定で付与）
+   ===================================================================== */
+
+/* iOSのアドレスバーを考慮した高さ（dvh未対応ブラウザは上の vh 指定のまま） */
+.dcard{max-height:calc(100dvh - 48px)}
+@media (max-width:720px),(max-aspect-ratio:1/1){
+  .dcard{max-height:min(54dvh,470px)}
+}
+/* ポップアップ内をスクロールしても盤面や背後に伝播させない */
+.dcard,.info{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+
+/* 指で押しやすいサイズ（44px以上） */
+@media (pointer:coarse){
+  .hb{min-width:44px;height:44px}
+  #index{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 58px);gap:8px}
+  #index .hb{height:40px;padding:0 12px}
+  .dclose{width:44px;height:44px;right:2px;top:0}
+  .sg-btns button{min-height:48px}
+}
+@media (hover:none){ .hb:active{background:rgba(70,70,70,.8)} }
+
+/* 狭い画面（スマホ縦向きなど） */
+@media (max-width:720px){
+  #introMsg{padding:0 20px;font-size:14px;letter-spacing:.12em;text-wrap:balance}
+  #introMsg.tap{font-size:16px}
+  #hint{padding:0 18px}
+  .info-list div{grid-template-columns:6em 1fr;gap:10px}
+  .info-note{font-size:12px}
+}
+@media (max-width:359px){ #hudCoord{display:none} }
+
+/* スマホ横向き（高さが低い）: 詳細ポップアップを右下にコンパクト表示 */
+@media (orientation:landscape) and (max-height:520px){
+  body.is-mobile #dossier{left:auto;right:max(12px,env(safe-area-inset-right));margin:0;bottom:max(8px,env(safe-area-inset-bottom));width:min(360px,46vw)}
+  body.is-mobile .dcard{max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px);padding:18px 14px 14px}
+  body.is-mobile .dtag{margin-bottom:8px}
+  body.is-mobile .dmedia{margin-bottom:8px}
+  body.is-mobile #dTitle{font-size:16px;margin-bottom:6px}
+  body.is-mobile #dBody{font-size:13px;line-height:1.85}
+  body.is-mobile .info{padding:20px 20px 16px;max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px)}
+  body.is-mobile .info-list div{padding:6px 0}
+  body.is-mobile .info-note{margin:10px 0 12px}
+}
+
+/* 負荷軽減: top のアニメーション（毎フレームのレイアウト再計算）を transform に置き換え。見た目は同じ */
+body.is-mobile #fxScan::after{top:-20%;animation:rollTFx 9s linear infinite}
+body.is-mobile .cam .roll{top:-25%;animation:rollTCam 5.5s linear infinite}
+@keyframes rollTFx{to{transform:translateY(722%)}}
+@keyframes rollTCam{to{transform:translateY(614%)}}
+@media (prefers-reduced-motion:reduce){
+  body.is-mobile #fxScan::after,body.is-mobile .cam .roll{animation:none}
+}
 </style>
 </head>
 <body>
@@ -474,11 +538,12 @@ body.dos-open #infoBtn{opacity:0;pointer-events:none}   /* 手がかり詳細が
     <p class="info-sub">KUWASAWA DESIGN SCHOOL</p>
     <dl class="info-list">
       <div><dt>企画・制作</dt><dd>K&T</dd></div>
+      <div><dt>映像</dt><dd>K&T</dd></div>
+      <div><dt>展示</dt><dd><a href="https://instagram.com/egg___0141" target="_blank" rel="noopener">K</a></dd></div>
       <div><dt>WEB</dt><dd><a href="https://instagram.com/churroigc" target="_blank" rel="noopener">T</a></dd></div>
-      <div><dt>SNS</dt><dd><a href="https://instagram.com/egg___0141" target="_blank" rel="noopener">K</a></dd></div>
-      <div><dt>撮影・編集</dt><dd>K&T</dd></div>
-      <div><dt>バージョン</dt><dd>v0.7.2</dd></div>
-      <div><dt>公開日</dt><dd>2026.XX.XX</dd></div>
+      <div><dt>SNS</dt><dd>@???</dd></div>
+      <div><dt>バージョン</dt><dd>v0.9.0</dd></div>
+      <div><dt>公開日</dt><dd>2026.10.XX</dd></div>
         <!-- ★追加 -->
       <div><dt>サウンド</dt><dd>
         <button type="button" id="soundToggle" class="sw" role="switch" aria-checked="false">
@@ -486,7 +551,7 @@ body.dos-open #infoBtn{opacity:0;pointer-events:none}   /* 手がかり詳細が
         </button>
       </dd></div>
     </dl>
-    <p class="info-note">© 2026 K&T. All rights reserved.<br>本作品は桑沢祭グランプリ2026応募作品の一部です。実在の人物・団体・事件とは関係ありません。</p>
+    <p class="info-note">© 2026 K&T. All rights reserved.<br>本作品は桑沢祭グランプリ2026応募作品の一部です。実在の人物・団体・事件とは関係ありません。また、本映像作品は<a href="https://frenz.jp/2026/exhibitors#member_07333d3d" target="_blank" rel="noopener">FRENZ2026</a>への出展も行い、1日目夜の部第3部にて上映されました。</p>
     <div class="info-actions"><button type="button" class="info-close" data-close>閉じる</button></div>
   </div>
 </dialog>
@@ -510,6 +575,14 @@ if (isMobile) {
   document.body.classList.add('is-mobile');
 }
 
+/* スマホ専用の負荷軽減設定（PCには一切影響しません） */
+const MOBILE_OPT = {
+  logoWarp: false,   // true にするとスマホでもロゴの歪みSVGフィルターを使う（GPU負荷が高い）
+  floatMinMs: 30,    // ふよふよ・赤糸の更新間隔の下限(ms)。30 ≒ 約30fps
+  dust: 28,          // 背景の塵の数（PCは70）
+  bgEvery: 6,        // 背景（揺らぐ塊・塵）を何フレームに1回更新するか（PCは3）
+};
+
 window.addEventListener('DOMContentLoaded', () => {
   const today = new Date();
   const year = today.getFullYear();
@@ -527,29 +600,30 @@ window.addEventListener('DOMContentLoaded', () => {
    ===================================================================== */
 const CONFIG = {
   BOARD: 3200,          // 盤面の一辺(px)。
-  cameraVideo: 'media/cam01.mp4',      // 例: 'media/cam01.mp4'。空なら疑似ライブ映像(Canvas→<video>)を自動生成
-  logoImage: 'media/logo.png',        // 例: 'media/logo.svg'。
+  cameraVideo: 'assets/cam01.mp4',      // 例: 'assets/cam01.mp4'。空なら疑似ライブ映像(Canvas→<video>)を自動生成
+  logoImage: 'assets/logo.png',        // 例: 'assets/logo.svg'。
   qrIntro: 'short',     
 };
 
 /* ★追加: サウンド設定 */
 const AUDIO_CONFIG = {
-  bgm: 'media/bgm.mp3',   // 常時流すBGM。空文字 '' にするとBGM機能ごと無効
+  bgm: 'assets/bgm.mp3',   // 常時流すBGM。空文字 '' にするとBGM機能ごと無効
   bgmVolume: 0.55,         // BGMの通常音量 (0〜1)
-  duckVolume: 0.16,        // 動画（音声あり）再生中にBGMを下げる音量
-  fadeMs: 900,             // 音量が切り替わる時の所要時間(ms)
-  sfxExplode: 'media/sound_00.mp3',   // ★追加: タップの時の効果音。空文字 '' で無効
+  // duckVolume: 0.16,        // 動画（音声あり）再生中にBGMを下げる音量
+  // fadeMs: 900,             // 音量が切り替わる時の所要時間(ms)
+  sfxExplode: 'assets/sound_00.mp3',   // ★追加: タップの時の効果音。空文字 '' で無効
   sfxVolume: 0.8,                     // ★追加: 効果音の音量 (0〜1)
   storageKey: 'shb-sound', // localStorageに保存するキー名 ('on' / 'off')
 };
 
 /* ★追加①: イントロで落下する画像（透過PNG）*/
-const INTRO_TEXTURES = ['media/intro01.png'];
+const INTRO_TEXTURES = ['assets/intro01.png','assets/intro02.png','assets/intro03.png'];
 const INTRO_TEX = {
-  order: 'random',   // 'random'=ランダム / 'cycle'=配列の順に繰り返し
-  ratio: 1,          // 画像を使う確率 0〜1（1=全部画像 / .6=6割が画像で残りは従来の机・椅子）
-  size:  isMobile ? 3.0 : 2.0,        // 画像の長辺の大きさ（単位 u ≒ 画面幅/9）
-  hit:   .7,         // 当たり判定の縮小率（透明な余白ぶん小さくして、浮いて見えるのを防ぐ）
+  order: 'random',
+  ratio: 1,
+  size:  isMobile ? 3.0 : 2.0,   // 「一番大きい画像」の長辺の大きさ（単位 u）
+  relative: true,                // ★追加: true=画像同士の大きさの比を維持 / false=従来（全画像の長辺を揃える）
+  hit:   .7,
 };
 
 /* ★追加③: 監視カメラ画像。添字がそのまま camId（0=通常 / 1〜10=異変） */
@@ -602,36 +676,36 @@ const INTRO_TEX = {
 
 const CAM_TRIGGER = { };   // 任意: 手がかりを開いた時に出す異変。例 { '001':3, '007':5 }
 /* ★追加: 場面切替の「ノイズ」を、用意した動画素材に置き換える。黒背景＋白ノイズ、音声あり前提 */
-const NOISE_CLIPS = ['media/noise_01.mp4', 'media/noise_02.mp4', 'media/noise_03.mp4', 'media/noise_04.mp4', 'media/noise_05.mp4', 'media/noise_06.mp4', 'media/noise_07.mp4', 'media/noise_08.mp4', 'media/noise_09.mp4', 'media/noise_10.mp4'];   // 複数指定でランダムに選択。空配列 [] なら従来のCSSノイズに戻る
+const NOISE_CLIPS = ['assets/noise_01.mp4', 'assets/noise_02.mp4', 'assets/noise_03.mp4', 'assets/noise_04.mp4', 'assets/noise_05.mp4', 'assets/noise_06.mp4', 'assets/noise_07.mp4', 'assets/noise_08.mp4', 'assets/noise_09.mp4', 'assets/noise_10.mp4'];   // 複数指定でランダムに選択。空配列 [] なら従来のCSSノイズに戻る
 const NOISE_MAX_MS = 1600;   // 動画の 'ended' が発火しない場合の保険（上限）
-const NOISE_VOL = 0.38;      // ★追加: ノイズ素材自体の再生音量 (0〜1)。BGMを下げる量（duckVolume）とは別の設定です
+const NOISE_VOL = 0;      // ★追加: ノイズ素材自体の再生音量 (0〜1)。BGMを下げる量（duckVolume）とは別の設定です
 
 // URL:  ?item=cam1 / ?item=001 … / ?item=victim / ?item=committee
 const META = {
   cam1: { tag:'CAM01', sub:'監視カメラ', title:'32教室',
     body:'度々「現象」が報告されている教室。調査中は常に状態を記録し「現象」の発生に備えている。',
-    note:'REC 2026.10.01 - 2026.10.05', video:'media/cam01.mp4', poster:'', image:'' },
+    note:'REC 2026.10.04 - 2026.10.05', video:'assets/cam01.mp4', poster:'', image:'' },
   '001': { tag:'#001', sub:'現象記録', title:'6階工作室',
     body:'',
-    note:'発生日時：2026/05/24(日) 16:42 / 目撃者：0名', video:'media/v001.mov', poster:'', image:'' },
+    note:'発生日時：2026/05/24(日) 16:42 / 目撃者：0名', video:'assets/v001.mp4', poster:'', image:'assets/001p.jpg' },
   '002': { tag:'#002', sub:'現象記録', title:'2階図書館',
     body:'',
-    note:'発生日時：2026/06/28(日) 14:18 / 目撃者：0名', video:'media/v002.mp4', poster:'', image:'' },
+    note:'発生日時：2026/06/28(日) 14:18 / 目撃者：0名', video:'assets/v002.mp4', poster:'', image:'assets/002p.jpg' },
   '003': { tag:'#003', sub:'現象記録', title:'5階エレベーターホール',
     body:'',
-    note:'発生日時：2026/08/07(金) 10:46 / 目撃者：2名', video:'media/v003.mp4', poster:'', image:''},
+    note:'発生日時：2026/08/07(金) 10:46 / 目撃者：2名', video:'assets/v003.mp4', poster:'', image:'assets/003p.jpg'},
   '004': { tag:'#004', sub:'現象記録', title:'6階工作室',
     body:'',
-    note:'発生日時：2026/09/02(水) 12:56 / 目撃者：1名', video:'media/v004.mp4', poster:'', image:'' },
+    note:'発生日時：2026/09/02(水) 12:56 / 目撃者：1名', video:'assets/v004.mp4', poster:'', image:'assets/004p.jpg' },
   '005': { tag:'#005', sub:'発見物', title:'-',
     body:'',
     note:'発生日時：2026/09/14(月)- / 発見者：清掃員', video:'', poster:'', image:'' },
   '006': { tag:'#006', sub:'現象記録', title:'7階学生ホール',
     body:'',
-    note:'発生日時：2026/09/15(火) 17:40 / 目撃者：27名', video:'media/v006.mov', poster:'', image:'' },
+    note:'発生日時：2026/09/15(火) 17:40 / 目撃者：27名', video:'assets/v006.mp4', poster:'', image:'assets/006p.jpg' },
   '007': { tag:'#007', sub:'現象記録', title:'5階コンピュータ室',
     body:'',
-    note:'発生日時：2026/09/21(月) 19:56 / 目撃者：0名', video:'media/v007.mov', poster:'', image:'' },
+    note:'発生日時：2026/09/21(月) 19:56 / 目撃者：0名', video:'assets/v007.mp4', poster:'', image:'assets/007p.jpg' },
   '008': { tag:'#008', sub:'現象記録', title:'1階くわかべ',
     body:'',
     note:'発生日時：2026/10/05(月) 15:31 / 目撃者：██名', video:'', poster:'', image:'' },
@@ -749,7 +823,7 @@ for(const c of CAPS){
 //   addFloat('logo'+(i+1), w, { x:p[0], y:p[1], r:p[2], jit:(i===3?28:48), rj:6, ampR:1.4, pinF: i===2 ? [.15,.6] : null });
 // });
 // GIF画像のパス（media フォルダ内の logo.gif を参照）
-const logoGifSrc = CONFIG.logoGif || CONFIG.logoImage || 'media/logo.gif';
+const logoGifSrc = CONFIG.logoGif || CONFIG.logoImage || 'assets/logo.png';
 const logoGifPathWithCache = `${logoGifSrc}?t=${Date.now()}`;
 
 // 画像が読み込めなかった場合のフォールバック用テキスト
@@ -771,7 +845,7 @@ LOGO_POS.forEach((p,i) => {
     };
   }
 
-  inner.style.filter = `url(#warp${(i%3)+1})`;
+  if(!isMobile || MOBILE_OPT.logoWarp) inner.style.filter = `url(#warp${(i%3)+1})`;   // スマホは重いSVGフィルターを外す
   w.appendChild(inner);
   if(i === 2) w.appendChild(mk('span','toha','とは'));
   logos.push(inner);
@@ -888,10 +962,12 @@ for(let i=0;i<4;i++){
   });
 }
 const dust = [];
+const DUST_N = isMobile ? MOBILE_OPT.dust : 70;
+const BG_EVERY = isMobile ? MOBILE_OPT.bgEvery : 3;
 for(let i=0;i<70;i++){
   const c = svgEl('circle', { r:rr(1,3), fill:'rgba(255,250,220,'+rr(.08,.3).toFixed(2)+')' });
-  bgsvg.appendChild(c);
-  dust.push({ el:c, x:rr(0,BOARD), y:rr(0,BOARD), vx:rr(-.15,.15), vy:rr(-.35,-.05) });
+  const d = { el:c, x:rr(0,BOARD), y:rr(0,BOARD), vx:rr(-.15,.15), vy:rr(-.35,-.05) };
+  if(i < DUST_N){ bgsvg.appendChild(c); dust.push(d); }
 }
 
 /* --- 捜査線（赤い糸）: 要素の座標に追従して毎フレーム更新 --- */
@@ -985,49 +1061,49 @@ function initCamFeed(){
 //   }catch(err){ /* 失敗時は Canvas がそのまま見える */ }
 // }
 
-function drawCam(t){
-  const g = camCtx, W = 320, H = 180;
-  const vx = 160 + Math.sin(t*.4)*3, vy = 86 + Math.cos(t*.33)*2;
-  const L = (.86 + .06*Math.sin(t*31) + .05*Math.sin(t*7.3)) * (Math.sin(t*.9) > .988 ? .45 : 1);
-  const col = v => { const c = clamp(v*L, 0, 255)|0; return `rgb(${c},${(c*.97)|0},${(c*.8)|0})`; };
-  const P = (x,y,z) => [vx + x/z, vy + y/z];
-  const poly = (pts,fill) => { g.fillStyle = fill; g.beginPath(); pts.forEach((p,i) => i ? g.lineTo(p[0],p[1]) : g.moveTo(p[0],p[1])); g.closePath(); g.fill(); };
-  const zb = 4.6;
-  g.fillStyle = '#000'; g.fillRect(0,0,W,H);
-  poly([P(-160,-88,zb),P(160,-88,zb),P(160,92,zb),P(-160,92,zb)], col(120));
-  poly([P(-160,92,1),P(160,92,1),P(160,92,zb),P(-160,92,zb)], col(92));
-  poly([P(-160,-88,1),P(160,-88,1),P(160,-88,zb),P(-160,-88,zb)], col(150));
-  poly([P(-160,-88,1),P(-160,-88,zb),P(-160,92,zb),P(-160,92,1)], col(112));
-  poly([P(160,-88,1),P(160,-88,zb),P(160,92,zb),P(160,92,1)], col(104));
-  // カーペットの継ぎ目
-  g.strokeStyle = 'rgba(0,0,0,.28)'; g.lineWidth = 1;
-  for(const z of [1.5,2.2,3.1]){ const a = P(-160,92,z), b = P(160,92,z); g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); }
-  // 扉
-  poly([P(160,-40,2.1),P(160,-40,2.8),P(160,92,2.8),P(160,92,2.1)], col(38));
-  poly([P(-160,-40,1.4),P(-160,-40,1.95),P(-160,92,1.95),P(-160,92,1.4)], col(42));
-  poly([P(-160,-40,3.3),P(-160,-40,3.9),P(-160,92,3.9),P(-160,92,3.3)], col(40));
-  // 蛍光灯（ときどき死ぬ）
-  [1.35,2.05,3.0,4.0].forEach((z,i) => {
-    let lf = .78 + .22*Math.sin(t*(3+i*1.7)+i);
-    if(Math.sin(t*(.6+i*.13)+i*5) > .93) lf = .12;
-    const c = clamp(255*lf*L, 0, 255)|0;
-    poly([P(-40,-88,z),P(40,-88,z),P(40,-88,z+.5),P(-40,-88,z+.5)], `rgb(${c},${c},${(c*.86)|0})`);
-  });
-  // 廊下の奥から近づく「何か」
-  const cyc = t % 44;
-  if(cyc > 8 && cyc < 26 && Math.sin(t*13) > -.85){
-    const u = (cyc-8)/18, z = 4.4 - u*2.6, f = P(Math.sin(u*3)*30, 92, z), hh = 150/z;
-    g.fillStyle = 'rgba(6,6,10,.93)';
-    g.fillRect(f[0]-hh*.11, f[1]-hh*.62, hh*.22, hh*.62);
-    g.fillRect(f[0]-hh*.19, f[1]-hh*.6, hh*.06, hh*.34);
-    g.fillRect(f[0]+hh*.13, f[1]-hh*.6, hh*.06, hh*.34);
-    g.beginPath(); g.arc(f[0], f[1]-hh*.72, hh*.09, 0, TAU); g.fill();
-  }
-  // ノイズと横ズレ
-  g.fillStyle = 'rgba(255,255,255,.1)';
-  for(let i=0;i<34;i++) g.fillRect(Math.random()*W|0, Math.random()*H|0, 1, 1);
-  if(Math.random() < .03){ const y = Math.random()*(H-24)|0, h = 4 + Math.random()*20|0; g.drawImage(camCanvas, 0, y, W, h, (Math.random()*26-13)|0, y, W, h); }
-}
+// function drawCam(t){
+//   const g = camCtx, W = 320, H = 180;
+//   const vx = 160 + Math.sin(t*.4)*3, vy = 86 + Math.cos(t*.33)*2;
+//   const L = (.86 + .06*Math.sin(t*31) + .05*Math.sin(t*7.3)) * (Math.sin(t*.9) > .988 ? .45 : 1);
+//   const col = v => { const c = clamp(v*L, 0, 255)|0; return `rgb(${c},${(c*.97)|0},${(c*.8)|0})`; };
+//   const P = (x,y,z) => [vx + x/z, vy + y/z];
+//   const poly = (pts,fill) => { g.fillStyle = fill; g.beginPath(); pts.forEach((p,i) => i ? g.lineTo(p[0],p[1]) : g.moveTo(p[0],p[1])); g.closePath(); g.fill(); };
+//   const zb = 4.6;
+//   g.fillStyle = '#000'; g.fillRect(0,0,W,H);
+//   poly([P(-160,-88,zb),P(160,-88,zb),P(160,92,zb),P(-160,92,zb)], col(120));
+//   poly([P(-160,92,1),P(160,92,1),P(160,92,zb),P(-160,92,zb)], col(92));
+//   poly([P(-160,-88,1),P(160,-88,1),P(160,-88,zb),P(-160,-88,zb)], col(150));
+//   poly([P(-160,-88,1),P(-160,-88,zb),P(-160,92,zb),P(-160,92,1)], col(112));
+//   poly([P(160,-88,1),P(160,-88,zb),P(160,92,zb),P(160,92,1)], col(104));
+//   // カーペットの継ぎ目
+//   g.strokeStyle = 'rgba(0,0,0,.28)'; g.lineWidth = 1;
+//   for(const z of [1.5,2.2,3.1]){ const a = P(-160,92,z), b = P(160,92,z); g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); }
+//   // 扉
+//   poly([P(160,-40,2.1),P(160,-40,2.8),P(160,92,2.8),P(160,92,2.1)], col(38));
+//   poly([P(-160,-40,1.4),P(-160,-40,1.95),P(-160,92,1.95),P(-160,92,1.4)], col(42));
+//   poly([P(-160,-40,3.3),P(-160,-40,3.9),P(-160,92,3.9),P(-160,92,3.3)], col(40));
+//   // 蛍光灯（ときどき死ぬ）
+//   [1.35,2.05,3.0,4.0].forEach((z,i) => {
+//     let lf = .78 + .22*Math.sin(t*(3+i*1.7)+i);
+//     if(Math.sin(t*(.6+i*.13)+i*5) > .93) lf = .12;
+//     const c = clamp(255*lf*L, 0, 255)|0;
+//     poly([P(-40,-88,z),P(40,-88,z),P(40,-88,z+.5),P(-40,-88,z+.5)], `rgb(${c},${c},${(c*.86)|0})`);
+//   });
+//   // 廊下の奥から近づく「何か」
+//   const cyc = t % 44;
+//   if(cyc > 8 && cyc < 26 && Math.sin(t*13) > -.85){
+//     const u = (cyc-8)/18, z = 4.4 - u*2.6, f = P(Math.sin(u*3)*30, 92, z), hh = 150/z;
+//     g.fillStyle = 'rgba(6,6,10,.93)';
+//     g.fillRect(f[0]-hh*.11, f[1]-hh*.62, hh*.22, hh*.62);
+//     g.fillRect(f[0]-hh*.19, f[1]-hh*.6, hh*.06, hh*.34);
+//     g.fillRect(f[0]+hh*.13, f[1]-hh*.6, hh*.06, hh*.34);
+//     g.beginPath(); g.arc(f[0], f[1]-hh*.72, hh*.09, 0, TAU); g.fill();
+//   }
+//   // ノイズと横ズレ
+//   g.fillStyle = 'rgba(255,255,255,.1)';
+//   for(let i=0;i<34;i++) g.fillRect(Math.random()*W|0, Math.random()*H|0, 1, 1);
+//   if(Math.random() < .03){ const y = Math.random()*(H-24)|0, h = 4 + Math.random()*20|0; g.drawImage(camCanvas, 0, y, W, h, (Math.random()*26-13)|0, y, W, h); }
+// }
 // const camBase = Date.UTC(2026,9,8,18,29,5), camT0 = performance.now();
 let lastStamp = '';
 function camStamp(){
@@ -1060,9 +1136,9 @@ function runNoiseTransition(onSwap){
   if(!vids.length) return false;
   const src = pickNoiseClip();
   let pending = vids.length, swapped = false;
-  if(soundOn) duckBgm(true);                                        // ★重要: 動画は1〜2個でも duck は1回だけ（開始1回／終了は全部終わった時に1回）
-  const doSwap = () => { if(!swapped){ swapped = true; onSwap(); } };
-  const finishOne = () => { pending--; if(pending <= 0 && soundOn) duckBgm(false); };
+  // if(soundOn) duckBgm(true);                                        // ★重要: 動画は1〜2個でも duck は1回だけ（開始1回／終了は全部終わった時に1回）
+  // const doSwap = () => { if(!swapped){ swapped = true; onSwap(); } };
+  // const finishOne = () => { pending--; if(pending <= 0 && soundOn) duckBgm(false); };
   vids.forEach((vid, i) => {
     vid.muted = !soundOn; if(soundOn) vid.removeAttribute('muted'); else vid.setAttribute('muted','');
     vid.src = src; vid.currentTime = 0; vid.classList.add('show');
@@ -1084,11 +1160,10 @@ function runNoiseTransition(onSwap){
   const boxes = [camImgEl.parentNode, dMedia];                        // ★追加: 従来のグリッチ（歪み・暗転）も同時に出す対象
   const src = pickNoiseClip();
   let pending = vids.length, swapped = false;
-  if(soundOn) duckBgm(true);
-  boxes.forEach(b => {                                                // ★追加
-    b.style.setProperty('--gl', (CAM_FX.glitchMs / 1000) + 's');      // 歪み演出の長さは従来どおり CAM_FX.glitchMs で調整可能
-    b.classList.remove('is-glitching'); void b.offsetWidth; b.classList.add('is-glitching');
-  });
+  // if(soundOn) duckBgm(true);
+  // boxes.forEach(b => {                                                // ★追加
+  //   b.style.setProperty('--gl', (CAM_FX.glitchMs / 1000) + 's');      // 歪み演出の長さは従来どおり CAM_FX.glitchMs で調整可能
+  //   b.classList.remove('is-glitching'); void b.offsetWidth; b.classList.add('is-glitching');
 
   // ★ 追加: 動画の終わりを待たず、CAM_FX.glitchMs の時間でグリッチの枠（::after等）を確実に削除する
   setTimeout(() => {
@@ -1099,7 +1174,7 @@ function runNoiseTransition(onSwap){
   const finishOne = () => {
     pending--;
     if(pending <= 0){
-      if(soundOn) duckBgm(false);
+      // if(soundOn) duckBgm(false);
       boxes.forEach(b => b.classList.remove('is-glitching'));         // ★追加
     }
   };
@@ -1161,17 +1236,17 @@ function setSound(on, opts = {}){
   if(opts.persist !== false){ try{ localStorage.setItem(AUDIO_CONFIG.storageKey, on ? 'on' : 'off'); }catch(e){} }
   if(on){ startBgm(); } else { fadeVol(bgm, 0, AUDIO_CONFIG.fadeMs); setTimeout(() => { if(!soundOn) bgm.pause(); }, AUDIO_CONFIG.fadeMs + 40); }
   syncSoundToggleUI();                                     // ★変更: 表示更新をここへ集約
-  if(dosVideoEl) dosVideoEl.muted = !soundOn;
+  // if(dosVideoEl) dosVideoEl.muted = !soundOn;
   }
 function syncSoundToggleUI(){                              // ★追加
   const st = $('#soundToggle'); if(!st) return;
   st.setAttribute('aria-checked', soundOn ? 'true' : 'false');
   st.querySelector('.sw-label').textContent = soundOn ? 'ON' : 'OFF';
 }
-function duckBgm(on){                                    // 動画（音声あり）が再生されている間、BGMを下げる
-  duckLevel += on ? 1 : -1; duckLevel = Math.max(0, duckLevel);
-  if(soundOn && !bgm.paused) fadeVol(bgm, duckLevel ? AUDIO_CONFIG.duckVolume : AUDIO_CONFIG.bgmVolume, AUDIO_CONFIG.fadeMs);
-}
+// function duckBgm(on){                                    // 動画（音声あり）が再生されている間、BGMを下げる
+//   duckLevel += on ? 1 : -1; duckLevel = Math.max(0, duckLevel);
+//   if(soundOn && !bgm.paused) fadeVol(bgm, duckLevel ? AUDIO_CONFIG.duckVolume : AUDIO_CONFIG.bgmVolume, AUDIO_CONFIG.fadeMs);
+// }
 syncSoundToggleUI();                                                    // ★追加: 保存済み設定を反映した時点の表示を合わせる
 if(!window.__soundToggleBound){                                         // ★追加: 保険
   $('#soundToggle').addEventListener('click', () => setSound(!soundOn));
@@ -1207,12 +1282,21 @@ addEventListener('pagehide', onAppHidden);   // iOSでタブを閉じる・ス�
 
 initCamFeed();
 
+/* ---------- スマホ専用: 自動再生がブロックされた場合の再試行（低電力モード等） ---------- */
+if(isMobile){
+  const resume = () => {
+    if(soundOn && AUDIO_CONFIG.bgm && bgm.paused && !document.hidden && (intro.exploded || !intro.active)) startBgm();   // ?item= 直行時などでBGMが始まっていない場合
+    [camVideo, dosVideoEl].forEach(v => { if(v && v.isConnected && v.paused && !v.ended && !document.hidden) v.play().catch(() => {}); });
+  };
+  ['touchend','click'].forEach(t => addEventListener(t, resume, { passive:true }));
+}
+
 /* =====================================================================
    4. Panzoom（CDNが使えない時は同じAPIの簡易版に切り替え）
    ===================================================================== */
 function MiniPanzoom(el, parent, opts){
   let x = 0, y = 0; 
-  let s = opts?.initialScale ?? (isMobile ? 0.55 : 1);
+  let s = opts?.initialScale ?? 1;
   const o = Object.assign({ minScale: 1, maxScale: 1 }, opts);
   const pts = new Map();
 
@@ -1250,7 +1334,7 @@ function MiniPanzoom(el, parent, opts){
     getScale: () => s,
     getPan: () => ({ x, y }),
     setOptions: n => Object.assign(o, n),
-    zoom: () => {}, // ズーム関数を空にして無効化
+    zoom: (ns) => { if(typeof ns === 'number'){ s = clamp(ns, o.minScale, o.maxScale); apply(); } },   // 倍率は cam.set() 経由でのみ変更（ジェスチャーズームは無し）
     pan: (nx, ny) => { x = nx; y = ny; apply(); },
     zoomWithWheel: () => {}, // ホイールズームを無効化
   };
@@ -1262,7 +1346,7 @@ const zoomOn = () => mqTouch.matches && !!window.Panzoom;
 const limits = { min: 1, max: 1 };
 function updateLimits(){
 //  if(zoomOn()){ limits.min = Math.max(.1, Math.min(innerWidth, innerHeight)/BOARD*.75); limits.max = 2.0; }
-  if(zoomOn()){ 
+  if(mqTouch.matches){ 
     limits.min = 0.50; 
     limits.max = 2.0;  
   }
@@ -1351,7 +1435,7 @@ function settleBounds(){
   document.addEventListener(t, e => e.preventDefault(), { passive:false }));
 
 document.addEventListener('touchmove', e => {
-  if (e.touches.length > 1 || e.scale !== 1) {
+  if (e.touches.length > 1 || (e.scale !== undefined && e.scale !== 1)) {   // e.scale は Safari 専用。他ブラウザ(undefined)で常時ブロックされ、ポップアップ内スクロールが効かなくなるのを防ぐ
     e.preventDefault(); // ピンチイン・アウト時の誤動作防止
   }
 }, { passive: false });
@@ -1368,7 +1452,9 @@ function resolveKey(raw){
   return META[s] ? s : null;
 }
 function focusView(key){
-  const f = byKey[key], vw = innerWidth, vh = innerHeight, portrait = vw < vh || vw < 720;
+  const f = byKey[key], vw = innerWidth, vh = innerHeight;
+  const landPhone = isMobile && vw > vh && vh < 520;                 // 横向きスマホ: ポップアップが右側に出るので左寄せで表示
+  const portrait = !landPhone && (vw < vh || vw < 720);
   const target = portrait ? Math.min(vw*.8, vh*.34) : Math.min(vw*.3, vh*.5);
   return { x:f.x0 + (f.foc ? f.foc[0] : 0), y:f.y0 + (f.foc ? f.foc[1] : 0), s:clamp(target/(f.ext||320), .55, 2.2),
            ax:portrait ? vw/2 : vw*.34, ay:portrait ? vh*.3 : vh/2 };
@@ -1415,8 +1501,9 @@ function mountMedia(key, m){
     v.src = src;
     if(item.poster) v.poster = item.poster;
 
-    v.muted = !soundOn;                                                // ★変更: サウンド設定に従う（従来は常時 true）
-    if(soundOn) v.removeAttribute('muted'); else v.setAttribute('muted','');
+    v.muted = true;                                                // *手がかり動画の音声無効化
+    // if(soundOn) v.removeAttribute('muted'); else 
+    v.setAttribute('muted','');
     v.loop = true;
     v.autoplay = true;
     v.playsInline = true;
@@ -1433,7 +1520,7 @@ function mountMedia(key, m){
       camVideo.play().catch(() => {});
     }
 
-    // ★追加: 動画の再生開始・ループ（seeked）時にグリッチ演出を発火
+    // ★追加: 動画の再生開始・ループ（seeked）時にグリッチ演出
     v.addEventListener('play', () => {
       triggerMediaGlitch(dMedia, 400);
     });
@@ -1447,7 +1534,7 @@ function mountMedia(key, m){
         playPromise.catch(() => { if(!v.muted){ v.muted = true; v.play().catch(()=>{}); } });   // ★追加: 音声あり再生が拒否された場合は無音で再生を継続
       }
     };
-    if(soundOn) v.addEventListener('playing', () => duckBgm(true), { once:true });   // ★修正
+    // if(soundOn) v.addEventListener('playing', () => duckBgm(true), { once:true });   // ★修正
 
     if (v.readyState >= 2) {
       startPlay();
@@ -1566,7 +1653,7 @@ function openDossier(key){
   // ★追加：ポップアップ内の動画（#001等）に対するループ時ノイズ処理の設定
   const dosVid = $('#dMedia video');
   if (dosVid) {
-    dosVid.removeAttribute('loop'); // 標準ループを解除
+    // dosVid.removeAttribute('loop'); // 標準ループを解除
     dosVid.addEventListener('ended', () => {
       const dosNoise = $('#dMedia .dosNoiseVid') || $('#dMedia video.dosNoiseVid');
       triggerCamLoopNoise(dosVid, dosNoise);
@@ -1614,6 +1701,7 @@ infoDlg.addEventListener('cancel', e => { e.preventDefault(); closeInfo(); });
 
 /* タップ判定（ドラッグとタップを分離） */
 let down = null; const activePtrs = new Set();
+const TAP_SLOP = isMobile ? 16 : 10, TAP_MS = isMobile ? 600 : 500;   // 指のブレ・押し込み時間の許容
 addEventListener('pointerdown', e => {
   activePtrs.add(e.pointerId);
   if(intro.active || !viewport.contains(e.target)) { down = null; return; }
@@ -1624,7 +1712,7 @@ addEventListener('pointerup', e => {
   activePtrs.delete(e.pointerId); viewport.classList.remove('grabbing');
   if(!down || e.pointerId !== down.id) return;
   const moved = Math.hypot(e.clientX-down.x, e.clientY-down.y), dt = performance.now()-down.t; down = null;
-  if(moved > 10 || dt > 500 || intro.active) return;
+  if(moved > TAP_SLOP || dt > TAP_MS || intro.active) return;
   const hit = document.elementFromPoint(e.clientX, e.clientY), item = hit && hit.closest && hit.closest('[data-key]');
   if(item && META[item.dataset.key]) selectItem(item.dataset.key);
   else if(!dossierEl.hidden) closeDossier();
@@ -1735,7 +1823,10 @@ function preloadIntroTextures(timeout = 4000){
 function pickIntroTexture(){
   if(!INTRO_IMGS.length || Math.random() >= INTRO_TEX.ratio) return null;
   const im = INTRO_TEX.order === 'cycle' ? INTRO_IMGS[introTexN++ % INTRO_IMGS.length] : INTRO_IMGS[Math.floor(Math.random()*INTRO_IMGS.length)];
-  const k = INTRO_TEX.size * intro.u / Math.max(im.naturalWidth, im.naturalHeight);
+  const ref = INTRO_TEX.relative
+    ? Math.max(...INTRO_IMGS.map(i => Math.max(i.naturalWidth, i.naturalHeight)))
+    : Math.max(im.naturalWidth, im.naturalHeight);
+  const k = INTRO_TEX.size * intro.u / ref;
   return { img:im, w:im.naturalWidth*k, h:im.naturalHeight*k };
 }
 const texSpecs = t => [{ x:0, y:0, w:t.w*INTRO_TEX.hit, h:t.h*INTRO_TEX.hit, c:'#000' }];
@@ -1760,7 +1851,7 @@ function introInit(qrKey){
   }
   intro.t0 = performance.now();
   introMsg.textContent = '';
-  introEl.addEventListener('pointerdown', e => {
+  introEl.addEventListener(isMobile ? 'click' : 'pointerdown', e => {   // iOSは指を離した時(click)でないと音声再生が許可されない
     if(intro.ready && !intro.exploded && !soundGateOpen){    // ★変更: 確認UI表示中はタップで開始させない
       if(soundChosen && soundOn) startBgm();                 // ★追加: 前回「音声あり」を選んでいた場合はここでBGM再生開始
       explode(e.clientX, e.clientY);
@@ -1851,23 +1942,28 @@ function introTick(now, dt){
 /* =====================================================================
    8. メインループ
    ===================================================================== */
-let lastNow = performance.now(), frameN = 0, lastCam = 0, lastDos = 0;
+let lastNow = performance.now(), frameN = 0, lastCam = 0, lastDos = 0, lastFloat = 0;
 function tick(now){
   requestAnimationFrame(tick);
   if(document.hidden) return;
   const dt = Math.min(now - lastNow, 50); lastNow = now; frameN++;
   const t = now/1000;
   if(flight) flight.step(now);
-  for(const f of floaters) stepFloat(f, t);
-  updateStrings(t);
+  if(!isMobile || now - lastFloat >= MOBILE_OPT.floatMinMs){   // スマホは約30fpsに間引き（カメラ移動は毎フレーム）
+    lastFloat = now;
+    for(const f of floaters) stepFloat(f, t);
+    updateStrings(t);
+  }
 
-  if(frameN % 3 === 0){
+  if(frameN % BG_EVERY === 0){
     blobs.forEach(b => b.el.setAttribute('d', blobD(b, t)));
-    for(const d of dust){ d.x += d.vx*3; d.y += d.vy*3; if(d.y < -10) d.y = BOARD+10; if(d.x < -10) d.x = BOARD+10; if(d.x > BOARD+10) d.x = -10; d.el.setAttribute('cx', d.x.toFixed(1)); d.el.setAttribute('cy', d.y.toFixed(1)); }
+    for(const d of dust){ d.x += d.vx*BG_EVERY; d.y += d.vy*BG_EVERY; if(d.y < -10) d.y = BOARD+10; if(d.x < -10) d.x = BOARD+10; if(d.x > BOARD+10) d.x = -10; d.el.setAttribute('cx', d.x.toFixed(1)); d.el.setAttribute('cy', d.y.toFixed(1)); }
   }
   if(frameN % 8 === 0){
-    const dms = document.querySelectorAll('.dm');
-    dms.forEach((m,i) => m.setAttribute('scale', (7 + 6*Math.sin(t*.7 + i*2.1)).toFixed(2)));
+    if(!isMobile || MOBILE_OPT.logoWarp){
+      const dms = document.querySelectorAll('.dm');
+      dms.forEach((m,i) => m.setAttribute('scale', (7 + 6*Math.sin(t*.7 + i*2.1)).toFixed(2)));
+    }
     const c = cam.center(); $('#hudCoord').textContent = `X ${P2(Math.round(c.x)).padStart(4,'0')} Y ${P2(Math.round(c.y)).padStart(4,'0')} ×${c.s.toFixed(2)}`;
   }
   if(camMode === 'canvas' && now - lastCam > 41){ lastCam = now; drawCam(t); }
@@ -1898,9 +1994,28 @@ function blobD(b, t){
   return d + 'Z';
 }
 
+/* スマホの画面回転: 床・壁の位置を作り直し、横幅が大きく変わった時は家具を上から落とし直す */
+let introPrevW = innerWidth;
+function introReflow(){
+  if(!intro.ctx) return;                                   // introInit 前は何もしない
+  const { W, H, M, u } = intro, rotated = Math.abs(W - introPrevW) > 50; introPrevW = W;
+  intro.floorY = H*.95;
+  if(M && intro.walls.length){
+    M.Composite.remove(intro.engine.world, intro.walls);
+    intro.walls = [ M.Bodies.rectangle(W/2, intro.floorY+60, W*4, 120, { isStatic:true, friction:.9 }),
+                    M.Bodies.rectangle(-60, H/2, 120, H*6, { isStatic:true }), M.Bodies.rectangle(W+60, H/2, 120, H*6, { isStatic:true }) ];
+    M.Composite.add(intro.engine.world, intro.walls);
+  }
+  if(!rotated) return;
+  for(const b of intro.bodies){
+    const nx = W*(.5 + (Math.random()-.5)*.56), ny = -u*(1 + Math.random()*3);
+    if(b.mini){ b.x = nx; b.y = ny; b.vx = 0; b.vy = 0; }
+    else if(M){ M.Body.setPosition(b, { x:nx, y:ny }); M.Body.setVelocity(b, { x:0, y:0 }); }
+  }
+}
 addEventListener('resize', () => {
   applyZoomMode();
-  if(intro.active){ introResize(); intro.W = innerWidth; intro.H = innerHeight; if(!intro.exploded){ const h = homeView(); cam.view(h.x, h.y, h.s*2.3); } }
+  if(intro.active){ introResize(); intro.W = innerWidth; intro.H = innerHeight; if(!intro.exploded){ const h = homeView(); cam.view(h.x, h.y, h.s*2.3); if(isMobile) introReflow(); } }
 });
 
 /* =====================================================================
