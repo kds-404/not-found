@@ -9,6 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta property="og:description" content="桑沢デザイン研究所で巻き起こる、不可解な謎。その「白昼夢」の原因を探るため、夢の世界への捜索を開始する。">
 <title>白昼夢現象調査委員会</title>
 <script>
 (function(){
@@ -454,6 +455,12 @@ body.is-mobile .cam .roll{top:-25%;animation:rollTCam 5.5s linear infinite}
 @media (prefers-reduced-motion:reduce){
   body.is-mobile #fxScan::after,body.is-mobile .cam .roll{animation:none}
 }
+
+/* 軽量モード（前回クラッシュした端末 / ?lite=1）: 全画面ブレンド・フィルター・常時アニメを止めてメモリ消費を抑える */
+body.lite #fxFlick{display:none}
+body.lite #fxScan::after,body.lite .cam .roll{animation:none}
+body.lite .stamp{mix-blend-mode:normal}
+body.lite .cam video,body.lite .cam canvas,body.lite .cam .camimg{filter:none}
 </style>
 </head>
 <body>
@@ -542,7 +549,7 @@ body.is-mobile .cam .roll{top:-25%;animation:rollTCam 5.5s linear infinite}
       <div><dt>展示</dt><dd><a href="https://instagram.com/egg___0141" target="_blank" rel="noopener">K</a></dd></div>
       <div><dt>WEB</dt><dd><a href="https://instagram.com/churroigc" target="_blank" rel="noopener">T</a></dd></div>
       <div><dt>SNS</dt><dd>@???</dd></div>
-      <div><dt>バージョン</dt><dd>v0.9.1</dd></div>
+      <div><dt>バージョン</dt><dd>v0.9.2</dd></div>
       <div><dt>公開日</dt><dd>2026.10.XX</dd></div>
         <!-- ★追加 -->
       <div><dt>サウンド</dt><dd>
@@ -575,13 +582,58 @@ if (isMobile) {
   document.body.classList.add('is-mobile');
 }
 
+/* ---------- クラッシュ復旧: 前回のセッションが正常終了(pagehide)しなかった = メモリ不足で落ちた可能性 ----------
+   → 24時間は「軽量モード」で起動する。?lite=1 で強制ON、?lite=0 で解除。 */
+const LITE = (() => {
+  const RUN = 'shb-run', LT = 'shb-lite-until';
+  try{
+    const q = new URLSearchParams(location.search).get('lite');
+    let lite = false;
+    if(q === '0') localStorage.removeItem(LT);
+    else if(q === '1') lite = true;
+    else if(isMobile){
+      const prev = Number(localStorage.getItem(RUN) || 0);
+      if(prev && Date.now() - prev < 6*3600e3) localStorage.setItem(LT, String(Date.now() + 24*3600e3));   // 異常終了を検知
+      if(Number(localStorage.getItem(LT) || 0) > Date.now()) lite = true;
+    }
+    if(isMobile){
+      const mark = () => { try{ localStorage.setItem(RUN, String(Date.now())); }catch(e){} };
+      mark();
+      addEventListener('pageshow', e => { if(e.persisted) mark(); });
+      addEventListener('pagehide', () => { try{ localStorage.removeItem(RUN); }catch(e){} });   // 正常に閉じた/再読み込みした時は印を消す
+    }
+    return lite;
+  }catch(e){ return false; }
+})();
+if(LITE) document.body.classList.add('lite');
+
 /* スマホ専用の負荷軽減設定（PCには一切影響しません） */
 const MOBILE_OPT = {
+  startAtItem: true, // ?item= 付きで開いた時、導入演出の最初から該当の手がかりの位置に居る（長距離の移動・ズームを避ける）
   logoWarp: false,   // true にするとスマホでもロゴの歪みSVGフィルターを使う（GPU負荷が高い）
   floatMinMs: 30,    // ふよふよ・赤糸の更新間隔の下限(ms)。30 ≒ 約30fps
   dust: 28,          // 背景の塵の数（PCは70）
   bgEvery: 6,        // 背景（揺らぐ塊・塵）を何フレームに1回更新するか（PCは3）
 };
+if(LITE){ MOBILE_OPT.floatMinMs = 50; MOBILE_OPT.bgEvery = 12; MOBILE_OPT.dust = 12; }
+const IN_PLACE = isMobile && MOBILE_OPT.startAtItem;
+const LITE_MAX_SCALE = 1.3;   // 軽量モードの最大ズーム（通常は2.0）
+
+/* 動画の確実な解放: 要素を消すだけでは iOS はデコーダを手放さず、操作を繰り返すとメモリが積み上がる */
+function releaseVideo(v){ try{ v.pause(); v.removeAttribute('src'); v.load(); }catch(e){} }
+function releaseMedia(box){ box.querySelectorAll('video').forEach(releaseVideo); }
+/* 盤面の監視カメラの動画切替（スマホは同じ動画なら読み直さない／軽量モードは手がかり動画を流さない） */
+function setCamSrc(src){
+  if(!camVideo || !src) return;
+  if(isMobile && camVideo.getAttribute('src') === src) return;
+  if(LITE && typeof CONFIG !== 'undefined' && src !== CONFIG.cameraVideo) return;
+  camVideo.src = src; camVideo.play().catch(() => {});
+}
+/* 現在開いている手がかりをURLに反映（スマホのみ）: 落ちて再読み込みされても同じ手がかりに戻れる */
+function syncUrl(key){
+  if(!isMobile) return;
+  try{ const u = new URL(location.href); if(key) u.searchParams.set('item', key); else u.searchParams.delete('item'); history.replaceState(null, '', u); }catch(e){}
+}
 
 window.addEventListener('DOMContentLoaded', () => {
   const today = new Date();
@@ -619,11 +671,11 @@ const AUDIO_CONFIG = {
 /* ★追加①: イントロで落下する画像（透過PNG）*/
 const INTRO_TEXTURES = ['assets/intro01.png','assets/intro02.png','assets/intro03.png'];
 const INTRO_TEX = {
-  order: 'random',
-  ratio: 1,
+  order: 'random',   // 'random'=ランダム / 'cycle'=配列の順に繰り返し
+  ratio: 1,          // 画像を使う確率 0〜1（1=全部画像）
   size:  isMobile ? 3.0 : 2.0,   // 「一番大きい画像」の長辺の大きさ（単位 u）
   relative: true,                // ★追加: true=画像同士の大きさの比を維持 / false=従来（全画像の長辺を揃える）
-  hit:   .7,
+  hit:   .7,         // 当たり判定の縮小率（透明な余白ぶん小さくする）
 };
 
 /* ★追加③: 監視カメラ画像。添字がそのまま camId（0=通常 / 1〜10=異変） */
@@ -828,6 +880,20 @@ const logoGifPathWithCache = `${logoGifSrc}?t=${Date.now()}`;
 
 // 画像が読み込めなかった場合のフォールバック用テキスト
 const FALLBACK_TEXT = '<i>白</i><i>昼</i><i>夢</i>';
+/* 軽量モード: 動くGIFを1フレームだけの静止画にする（7個×GIFの常時デコード・再描画が重いため） */
+let _frozenP = null;
+function frozenLogo(){
+  return _frozenP || (_frozenP = new Promise(res => {
+    const im = new Image();
+    im.onload = () => { try{
+      const k = Math.min(1, 640/im.naturalWidth), c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(im.naturalWidth*k)); c.height = Math.max(1, Math.round(im.naturalHeight*k));
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); res(c.toDataURL('image/png'));
+    }catch(e){ res(null); } };
+    im.onerror = () => res(null);
+    im.src = logoGifPathWithCache;
+  }));
+}
 
 const LOGO_POS = [[338,205,-8],[1102,268,-6],[1503,705,-6],[865,815,-3],[825,1462,-3],[1672,1690,-4],[266,1790,-6]];
 
@@ -835,7 +901,7 @@ LOGO_POS.forEach((p,i) => {
   const w = mk('div', 'lgw');
   
   // 初期状態では GIF 画像を表示
-  const inner = mk('div', 'logo', `<img src="${logoGifPathWithCache}" alt="白昼夢">`);
+  const inner = mk('div', 'logo', LITE ? '<img alt="白昼夢">' : `<img src="${logoGifPathWithCache}" alt="白昼夢">`);
   
   // 画像の読み込みエラー（onerror）が発生した場合、テキストロゴに差し替える
   const img = inner.querySelector('img');
@@ -843,6 +909,7 @@ LOGO_POS.forEach((p,i) => {
     img.onerror = () => {
       inner.innerHTML = FALLBACK_TEXT;
     };
+    if(LITE) frozenLogo().then(u => { img.src = u || logoGifPathWithCache; });
   }
 
   if(!isMobile || MOBILE_OPT.logoWarp) inner.style.filter = `url(#warp${(i%3)+1})`;   // スマホは重いSVGフィルターを外す
@@ -1348,7 +1415,7 @@ function updateLimits(){
 //  if(zoomOn()){ limits.min = Math.max(.1, Math.min(innerWidth, innerHeight)/BOARD*.75); limits.max = 2.0; }
   if(mqTouch.matches){ 
     limits.min = 0.50; 
-    limits.max = 2.0;  
+    limits.max = LITE ? LITE_MAX_SCALE : 2.0;  
   }
   else { limits.min = limits.max = 1; }
 }
@@ -1402,7 +1469,7 @@ function flyTo(bx,by,s,o={}){
   const st = cam.get(), c0x = ax/st.s - st.x, c0y = ay/st.s - st.y;
   s = clamp(s, limits.min, limits.max);
   const screenDist = Math.hypot(bx-c0x, by-c0y)*Math.min(st.s, s);
-  const bump = o.bump ?? clamp((screenDist - Math.min(vw,vh)*.6)/(Math.max(vw,vh)*2), 0, 1)*.9; // 遠いときは一度引いてから寄る
+  const bump = o.bump ?? (LITE ? 0 : clamp((screenDist - Math.min(vw,vh)*.6)/(Math.max(vw,vh)*2), 0, 1)*.9); // 遠いときは一度引いてから寄る
   const ls0 = Math.log(st.s), ls1 = Math.log(s), dur = o.dur || 1600, ease = o.ease || easeInOutCubic, t0 = performance.now();
   return new Promise(resolve => {
     flight = { resolve, step(now){
@@ -1474,13 +1541,25 @@ let dosToken = 0, dosKey = null, dosCanvas = null, dosMirror = false;
 function setActive(key){ floaters.forEach(f => f.el.classList.remove('active')); if(key && byKey[key]) byKey[key].el.classList.add('active'); }
 
 // ⭕ 修正版 mountMedia 関数（9/25）
+let mountT = 0;
 function mountMedia(key, m){
+  clearTimeout(mountT); releaseMedia(dMedia);
   dMedia.innerHTML = ''; dosCanvas = null; dosMirror = false;
 
   // m が undefined や null の場合でもエラーで止まらないよう保護
   const item = m || {};
   const src = item.video || item.image || (key === 'cam1' ? (typeof CONFIG !== 'undefined' ? CONFIG.cameraVideo : '') : '');
-  
+
+  /* スマホ: 索引の連打などで動画を次々生成しない。停止して約0.28秒落ち着いてから動画を作る */
+  if(isMobile && !item.__now && (item.video || (key === 'cam1' && src))){
+    const tok = dosToken;
+    dosVideoEl = null; dosNoiseVid = null;
+    dMedia.appendChild(mk('span','dcap', key === 'cam1' ? 'CAM01 LIVE' : (item.tag ? 'RECORD ' + item.tag : 'RECORDING')));
+    dMedia.appendChild(mk('i','drec'));
+    mountT = setTimeout(() => { if(tok === dosToken && dosKey === key) mountMedia(key, Object.assign({}, item, { __now:true })); }, 280);
+    return;
+  }
+
   dosVideoEl = null;                                                   // ★追加: 前の手がかりの状態を引き継がない
   dosNoiseVid = null;   // ★追加: ノイズ・トランジション用videoも同様にリセット
 
@@ -1491,10 +1570,7 @@ function mountMedia(key, m){
     dMedia.appendChild(mk('span','dcap', item.tag ? 'RECORD ' + item.tag : 'RECORDING'));
 
     // ★盤面カメラの連動: 画像の手がかり時は盤面カメラを初期動画に戻す
-    if(camVideo && typeof CONFIG !== 'undefined' && CONFIG.cameraVideo){
-      camVideo.src = CONFIG.cameraVideo;
-      camVideo.play().catch(() => {});
-    }
+    if(camVideo && typeof CONFIG !== 'undefined' && CONFIG.cameraVideo) setCamSrc(CONFIG.cameraVideo);
 
   }else if(src){
     const v = mk('video');
@@ -1515,10 +1591,7 @@ function mountMedia(key, m){
     dosVideoEl = v;
 
     // ★盤面カメラの連動: 動画手がかりを開いた場合、盤面カメラにも同じ動画を流す
-    if(camVideo && item.video){
-      camVideo.src = item.video;
-      camVideo.play().catch(() => {});
-    }
+    if(camVideo && item.video) setCamSrc(item.video);
 
     // ★追加: 動画の再生開始・ループ（seeked）時にグリッチ演出
     v.addEventListener('play', () => {
@@ -1559,10 +1632,7 @@ function mountMedia(key, m){
     dMedia.appendChild(mk('span','dcap', dosMirror ? 'CAM01 LIVE' : 'NO SIGNAL'));
 
     // ★盤面カメラの連動: メディアなしの場合は盤面カメラを初期動画に戻す
-    if(camVideo && typeof CONFIG !== 'undefined' && CONFIG.cameraVideo){
-      camVideo.src = CONFIG.cameraVideo;
-      camVideo.play().catch(() => {});
-    }
+    if(camVideo && typeof CONFIG !== 'undefined' && CONFIG.cameraVideo) setCamSrc(CONFIG.cameraVideo);
   }
   dMedia.appendChild(mk('i','drec'));
 }
@@ -1643,7 +1713,7 @@ function mountMedia(key, m){
 // }
 function openDossier(key){
   const m = META[key]; if(!m) return;
-  dosKey = key; dosToken++;
+  dosKey = key; dosToken++; syncUrl(key);
   $('#dTag').textContent = m.tag; $('#dSub').textContent = m.sub || '';
   $('#dTitle').textContent = m.title; $('#dBody').textContent = m.body; $('#dNote').textContent = m.note || '';
   
@@ -1669,12 +1739,11 @@ function closeDossier(){
   document.body.classList.remove('dos-open'); setActive(null); dosKey = null;
 
   // ★追加: 詳細を閉じたら盤面の監視カメラ(camVideo)を初期動画に戻す
-  if(camVideo && CONFIG.cameraVideo){
-    camVideo.src = CONFIG.cameraVideo;
-    camVideo.play().catch(() => {});
-  }
+  if(camVideo && CONFIG.cameraVideo) setCamSrc(CONFIG.cameraVideo);
+  syncUrl(null);
+  clearTimeout(mountT);
 
-  setTimeout(() => { if(tok === dosToken){ dossierEl.hidden = true; dMedia.innerHTML = ''; dosCanvas = null; } }, 380);
+  setTimeout(() => { if(tok === dosToken){ dossierEl.hidden = true; releaseMedia(dMedia); dMedia.innerHTML = ''; dosCanvas = null; dosVideoEl = null; dosNoiseVid = null; } }, 380);
 }
 $('#dClose').addEventListener('click', closeDossier);
 addEventListener('keydown', e => { if(e.key === 'Escape' && !infoDlg.open) closeDossier(); if((e.key === 'Enter' || e.key === ' ') && intro.active && intro.ready && !intro.exploded){ e.preventDefault(); explode(innerWidth/2, innerHeight*.75); } });
@@ -1760,7 +1829,7 @@ const intro = { active:true, ready:false, exploded:false, qrKey:null, bodies:[],
 const introEl = $('#intro'), introBg = $('#introBg'), introMsg = $('#introMsg');
 
 function introResize(){
-  const cv = $('#introCanvas'); intro.dpr = Math.min(devicePixelRatio || 1, 2); intro.W = innerWidth; intro.H = innerHeight;
+  const cv = $('#introCanvas'); intro.dpr = Math.min(devicePixelRatio || 1, LITE ? 1.5 : 2); intro.W = innerWidth; intro.H = innerHeight;
   cv.width = intro.W*intro.dpr; cv.height = intro.H*intro.dpr;
 }
 function furniture(kind, u){
@@ -1824,7 +1893,7 @@ function pickIntroTexture(){
   if(!INTRO_IMGS.length || Math.random() >= INTRO_TEX.ratio) return null;
   const im = INTRO_TEX.order === 'cycle' ? INTRO_IMGS[introTexN++ % INTRO_IMGS.length] : INTRO_IMGS[Math.floor(Math.random()*INTRO_IMGS.length)];
   const ref = INTRO_TEX.relative
-    ? Math.max(...INTRO_IMGS.map(i => Math.max(i.naturalWidth, i.naturalHeight)))
+    ? Math.max(...INTRO_IMGS.map(i => Math.max(i.naturalWidth, i.naturalHeight)))   // 全画像の最大の長辺を基準 → 画像同士の大きさの比を維持
     : Math.max(im.naturalWidth, im.naturalHeight);
   const k = INTRO_TEX.size * intro.u / ref;
   return { img:im, w:im.naturalWidth*k, h:im.naturalHeight*k };
@@ -1841,7 +1910,7 @@ function introInit(qrKey){
   const { W, H } = intro;
   intro.u = clamp(Math.min(W, H*1.2)/9, 38, 112); intro.floorY = H*.95;
   intro.short = !!qrKey && CONFIG.qrIntro === 'short';
-  intro.N = intro.short ? (isMobile ? 4 : 6) : Math.round(clamp(W/intro.u*1.5, isMobile ? 4 : 12, isMobile ? 10 : 18)); intro.gap = intro.short ? 75 : 130;
+  intro.N = intro.short ? (isMobile ? 4 : 6) : Math.round(clamp(W/intro.u*1.5, isMobile ? 4 : 12, isMobile ? 10 : 18)); intro.gap = intro.short ? 75 : 130; if(LITE) intro.N = Math.min(intro.N, 6);
   const M = window.Matter; intro.M = M || null;
   if(M){
     intro.engine = M.Engine.create({ positionIterations:8, velocityIterations:6 }); intro.engine.gravity.y = 1.1;
@@ -1884,12 +1953,18 @@ function explode(px, py){
   setTimeout(startReveal, 120);
 }
 function startReveal(){
-  if(intro.qrKey){ selectItem(intro.qrKey, { delayOpen:true, dur:3600, ease:easeInOutCubic }); }
+  if(intro.qrKey && IN_PLACE){ const k = intro.qrKey; setTimeout(() => openDossier(k), 500); }   // スマホ: すでに該当位置に居るので長距離の移動はせず、そのまま詳細を開く
+  else if(intro.qrKey){ selectItem(intro.qrKey, { delayOpen:true, dur:3600, ease:easeInOutCubic }); }
   else { const h = homeView(); flyTo(h.x, h.y, h.s, { dur:2400, ease:easeOutCubic, bump:0 }); }
   if(!intro.qrKey){ const hint = $('#hint'); setTimeout(() => { hint.classList.add('show'); setTimeout(() => hint.classList.remove('show'), 7000); }, 2400); }
 }
 function finishIntro(){
   intro.active = false; introEl.style.display = 'none'; document.body.classList.add('ready');
+  try{                                           // 導入用キャンバス(画面サイズ×dpr)と物理エンジンを解放
+    const cv = $('#introCanvas'); cv.width = cv.height = 0;
+    if(intro.bodies) intro.bodies.length = 0;
+    if(intro.M && intro.engine) intro.M.Engine.clear(intro.engine);
+  }catch(e){}
 }
 let soundGateOpen = false;
 $('#sgOn').addEventListener('click', e => { soundGateOpen = false; $('#soundGate').hidden = true; introMsg.style.display = ''; setSound(true); explode(e.clientX, e.clientY); });
@@ -1995,6 +2070,13 @@ function blobD(b, t){
 }
 
 /* スマホの画面回転: 床・壁の位置を作り直し、横幅が大きく変わった時は家具を上から落とし直す */
+let introQrKey = null;
+function introCam(){
+  if(IN_PLACE && introQrKey && byKey[introQrKey]){
+    const v = focusView(introQrKey);
+    cam.view(v.x, v.y, clamp(v.s, limits.min, limits.max), v.ax, v.ay);
+  }else{ const h = homeView(); cam.view(h.x, h.y, h.s*2.3); }
+}
 let introPrevW = innerWidth;
 function introReflow(){
   if(!intro.ctx) return;                                   // introInit 前は何もしない
@@ -2015,7 +2097,7 @@ function introReflow(){
 }
 addEventListener('resize', () => {
   applyZoomMode();
-  if(intro.active){ introResize(); intro.W = innerWidth; intro.H = innerHeight; if(!intro.exploded){ const h = homeView(); cam.view(h.x, h.y, h.s*2.3); if(isMobile) introReflow(); } }
+  if(intro.active){ introResize(); intro.W = innerWidth; intro.H = innerHeight; if(!intro.exploded){ introCam(); if(isMobile) introReflow(); } }
 });
 
 /* =====================================================================
@@ -2024,7 +2106,7 @@ addEventListener('resize', () => {
 (function boot(){
   const qrKey = resolveKey(params.get('item'));
   const h = homeView();
-  cam.view(h.x, h.y, h.s*2.3);          // 導入中は盤面を大きく寄せておき、爆発と同時に引いて空間を広げる
+  introQrKey = qrKey; introCam();       // 導入中は盤面を大きく寄せておき、爆発と同時に引いて空間を広げる（スマホ+?item=は該当位置から開始）
   if(qrKey && CONFIG.qrIntro === 'none'){
     introEl.style.display = 'none'; intro.active = false; document.body.classList.add('ready');
     cam.view(h.x, h.y, h.s); selectItem(qrKey, { delayOpen:true, dur:2600 });
