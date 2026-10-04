@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#262626">
-<!-- スマホ向け: 日時や番号の自動リンク化を止める / ホーム画面追加時にフルスクリーン表示 -->
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -26,7 +25,7 @@
 <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&display=swap" rel="stylesheet">
 <style>
 /* =====================================================================
-   捜査ボード
+   ボード
    ===================================================================== */
 *{box-sizing:border-box}
 :root{
@@ -193,14 +192,14 @@ html, body {
 @keyframes camNoise{0%{opacity:.95;background-position:0 0}18%{opacity:.5;background-position:-70px 40px}36%{opacity:.9;background-position:50px -60px}55%{opacity:.35;background-position:-30px -20px}75%{opacity:.7;background-position:80px 30px}100%{opacity:0}}
 @keyframes camBars{0%{transform:translate(4%,0)}14%{transform:translate(-6%,-8%)}30%{transform:translate(5%,10%)}47%{transform:translate(-3%,-22%)}64%{transform:translate(6%,14%)}80%{transform:translate(-4%,3%)}100%{transform:translate(0,0);opacity:0}}
 
-/* ★追加: ノイズ素材（黒背景+白ノイズ）を使ったトランジション用オーバーレイ */
+/* ノイズ素材（黒背景+白ノイズ）を使ったトランジション用オーバーレイ */
 .camNoiseVid,.dosNoiseVid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none;mix-blend-mode:screen;z-index:8;transition:opacity .06s}
 .camNoiseVid.show,.dosNoiseVid.show{opacity:1}
 
 .cam .lbl{position:absolute;left:calc(14px*var(--k));top:calc(18px*var(--k));font:500 calc(26px*var(--k))/1 var(--serif);color:#fff;letter-spacing:.06em;text-shadow:0 0 6px rgba(0,0,0,.7)}
 .cam .cid{position:absolute;left:calc(22px*var(--k));bottom:calc(14px*var(--k));font:400 calc(21px*var(--k))/1 var(--sans);color:#fff;letter-spacing:.06em;text-shadow:0 0 5px rgba(0,0,0,.7)}
 .cam .ts{position:absolute;right:calc(18px*var(--k));bottom:calc(14px*var(--k));font:400 calc(16px*var(--k))/1 var(--sans);color:#fff;letter-spacing:.04em;text-shadow:0 0 5px rgba(0,0,0,.7)}
-.cam .rec{position:absolute;right:calc(14px*var(--k));top:calc(14px*var(--k));width:calc(34px*var(--k));height:calc(34px*var(--k));border-radius:50%;background:#ff2229;animation:recb 1.2s steps(1) infinite}
+.cam .rec{position:absolute;right:calc(14px*var(--k));top:calc(14px*var(--k));width:calc(16px*var(--k));height:calc(16px*var(--k));border-radius:50%;background:#ff2229;animation:recb 1.2s steps(1) infinite}
 @keyframes recb{0%,60%{opacity:1}61%,100%{opacity:.15}}
 
 /* スタンプ */
@@ -234,7 +233,7 @@ body.ready #hud{opacity:1}
 #hint.show{opacity:1}
 @media (max-width:720px),(max-aspect-ratio:1/1){ body.dos-open #hudBtns,body.dos-open #index,body.dos-open #hint{display:none} }
 
-/* ---------- ★追加: サウンド確認ゲート（イントロ内） ---------- */
+/* ---------- サウンド確認ゲート（イントロ内） ---------- */
 #soundGate{position:absolute;left:0;right:0;top:32%;text-align:center;animation:fadeUp .5s ease both;pointer-events:auto}
 #soundGate p{margin:0 0 10px;font:400 12px/1.7 var(--serif);letter-spacing:.16em;color:rgba(255,255,255,.8);text-shadow:0 1px 6px #000}
 .sg-btns{display:flex;gap:10px;justify-content:center}
@@ -249,7 +248,7 @@ body.ready #hud{opacity:1}
 .sg-btns button:focus-visible{outline:2px solid #fff;outline-offset:2px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
-/* ---------- ★追加: サウンドのON/OFFスイッチ（制作情報ダイアログ内） ---------- */
+/* ---------- サウンドのON/OFFスイッチ（制作情報ダイアログ内） ---------- */
 .sw{display:inline-flex;align-items:center;gap:8px;background:none;border:0;padding:0;cursor:pointer;color:#f2f2f2;font:400 12px/1.7 var(--serif);letter-spacing:.08em}
 .sw-track{width:38px;height:20px;border-radius:99px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);position:relative;transition:background .2s,border-color .2s}
 .sw-thumb{position:absolute;top:1px;left:1px;width:16px;height:16px;border-radius:50%;background:#ccc;transition:transform .2s,background .2s}
@@ -423,20 +422,16 @@ body.dos-open #infoBtn{opacity:0;pointer-events:none}   /* 手がかり詳細が
 }
 
 /* =====================================================================
-   モバイル最適化  ※ PC表示（マウス操作・広い画面）には影響しない指定のみ
-   ・レイアウト系 … @media（pointer:coarse / 幅 / 向き）
-   ・負荷軽減系   … body.is-mobile（JSがUA判定で付与）
+   モバイル最適化
    ===================================================================== */
 
-/* iOSのアドレスバーを考慮した高さ（dvh未対応ブラウザは上の vh 指定のまま） */
 .dcard{max-height:calc(100dvh - 48px)}
 @media (max-width:720px),(max-aspect-ratio:1/1){
   .dcard{max-height:min(54dvh,470px)}
 }
-/* ポップアップ内をスクロールしても盤面や背後に伝播させない */
+
 .dcard,.info{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 
-/* 指で押しやすいサイズ（44px以上） */
 @media (pointer:coarse){
   .hb{min-width:44px;height:44px}
   #index{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 58px);gap:8px}
@@ -456,7 +451,7 @@ body.dos-open #infoBtn{opacity:0;pointer-events:none}   /* 手がかり詳細が
 }
 @media (max-width:359px){ #hudCoord{display:none} }
 
-/* スマホ横向き（高さが低い）: 詳細ポップアップを右下にコンパクト表示 */
+/* スマホ横向き: 詳細ポップアップ右下コンパクト表示 */
 @media (orientation:landscape) and (max-height:520px){
   body.is-mobile #dossier{left:auto;right:max(12px,env(safe-area-inset-right));margin:0;bottom:max(8px,env(safe-area-inset-bottom));width:min(360px,46vw)}
   body.is-mobile .dcard{max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px);padding:18px 14px 14px}
@@ -469,7 +464,7 @@ body.dos-open #infoBtn{opacity:0;pointer-events:none}   /* 手がかり詳細が
   body.is-mobile .info-note{margin:10px 0 12px}
 }
 
-/* 負荷軽減: top のアニメーション（毎フレームのレイアウト再計算）を transform に置き換え。見た目は同じ */
+/* 負荷軽減: top のアニメーションを transform に置き換え。 */
 body.is-mobile #fxScan::after{top:-20%;animation:rollTFx 9s linear infinite}
 body.is-mobile .cam .roll{top:-25%;animation:rollTCam 5.5s linear infinite}
 @keyframes rollTFx{to{transform:translateY(722%)}}
@@ -478,7 +473,7 @@ body.is-mobile .cam .roll{top:-25%;animation:rollTCam 5.5s linear infinite}
   body.is-mobile #fxScan::after,body.is-mobile .cam .roll{animation:none}
 }
 
-/* 軽量モード（前回クラッシュした端末 / ?lite=1）: 全画面ブレンド・フィルター・常時アニメを止めてメモリ消費を抑える */
+/* 軽量モード（前回クラッシュ / ?lite=1）: 全画面ブレンド・フィルター・常時アニメを止めてメモリ消費を抑える */
 body.lite #fxFlick{display:none}
 body.lite #fxScan::after,body.lite .cam .roll{animation:none}
 body.lite .stamp{mix-blend-mode:normal}
@@ -486,8 +481,8 @@ body.lite .cam video,body.lite .cam canvas,body.lite .cam .camimg{filter:none}
 </style>
 </head>
 <body>
+  <!-- Designed & Directed by TANAKA Ryuki / Built with Claude -->
 
-<!-- 歪み用フィルタ（ロゴに適用。JSで scale を微妙に揺らす） -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
     <filter id="warp1" x="-10%" y="-20%" width="120%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.010 0.028" numOctaves="2" seed="4" result="n"/><feDisplacementMap class="dm" in="SourceGraphic" in2="n" scale="8" xChannelSelector="R" yChannelSelector="G"/></filter>
@@ -544,7 +539,7 @@ body.lite .cam video,body.lite .cam canvas,body.lite .cam .camimg{filter:none}
     <div id="introUI">
       <div id="introTitle">白昼夢現象調査委員会<small>INVESTIGATION BOARD</small></div>
       <div id="introMsg"></div>
-       <!-- ★追加: サウンド確認（初回のみ、設定が未保存の時だけ表示） -->
+       <!-- サウンド確認（初回のみ、設定が未保存の時だけ表示） -->
       <div id="soundGate" hidden>
         <p>音声を有効にしますか？</p>
         <div class="sg-btns">
@@ -553,12 +548,11 @@ body.lite .cam video,body.lite .cam canvas,body.lite .cam .camimg{filter:none}
         </div>
     </div>
     <div id="flash"></div>
-     <!-- ★追加: 常時再生するBGM -->
   <audio id="bgm" loop preload="none"></audio>
   </div>
 </div>
 
-<!-- ★追加: 制作情報ダイアログ -->
+<!-- 制作情報ダイアログ -->
 <dialog id="infoDlg" aria-labelledby="infoTitle">
   <div class="info">
     <button type="button" class="info-x" data-close aria-label="閉じる">×</button>
@@ -567,12 +561,11 @@ body.lite .cam video,body.lite .cam canvas,body.lite .cam .camimg{filter:none}
     <p class="info-sub">KUWASAWA DESIGN SCHOOL</p>
     <dl class="info-list">
       <div><dt>企画・制作・映像</dt><dd>K&T</dd></div>
-      <div><dt>展示</dt><dd><a href="https://instagram.com/egg___0141" target="_blank" rel="noopener">KITANO Yuto</a></dd></div>
-      <div><dt>WEB</dt><dd><a href="https://instagram.com/churroigc" target="_blank" rel="noopener">TANAKA Ryuki</a></dd></div>
-      <div><dt></dt><dd><a href="https://instagram.com/hakuchumu_phenomenon" target="_blank" rel="noopener">@hakuchumu_phenomenon</a></dd></div>
-      <div><dt>バージョン</dt><dd>v0.9.6</dd></div>
+      <div><dt>展示</dt><dd><a href="https://instagram.com/egg___0141" target="_blank" rel="noopener">KITANO YUTO</a></dd></div>
+      <div><dt>WEB</dt><dd><a href="https://instagram.com/churroigc" target="_blank" rel="noopener">TANAKA RYUKI</a></dd></div>
+      <div><dt>アカウント</dt><dd><a href="https://instagram.com/hakuchumu_phenomenon" target="_blank" rel="noopener">@hakuchumu_phenomenon</a></dd></div>
+      <div><dt>バージョン</dt><dd>v0.9.7</dd></div>
       <div><dt>公開日</dt><dd>2026.10.XX</dd></div>
-        <!-- ★追加 -->
       <div><dt>サウンド</dt><dd>
         <button type="button" id="soundToggle" class="sw" role="switch" aria-checked="false">
           <span class="sw-track"><span class="sw-thumb"></span></span><span class="sw-label">OFF</span>
@@ -603,7 +596,7 @@ if (isMobile) {
   document.body.classList.add('is-mobile');
 }
 
-/* ---------- クラッシュ復旧: 前回のセッションが正常終了(pagehide)しなかった = メモリ不足で落ちた可能性 ----------
+/* ---------- クラッシュ復旧 ----------
    → 24時間は「軽量モード」で起動する。?lite=1 で強制ON、?lite=0 で解除。 */
 const LITE = (() => {
   const RUN = 'shb-run', LT = 'shb-lite-until';
@@ -628,7 +621,7 @@ const LITE = (() => {
 })();
 if(LITE) document.body.classList.add('lite');
 
-/* スマホ専用の負荷軽減設定（PCには一切影響しません） */
+/* スマホ専用の負荷軽減設定 */
 const MOBILE_OPT = {
   startAtItem: true, // ?item= 付きで開いた時、導入演出の最初から該当の手がかりの位置に居る（長距離の移動・ズームを避ける）
   logoWarp: false,   // true にするとスマホでもロゴの歪みSVGフィルターを使う（GPU負荷が高い）
@@ -672,42 +665,42 @@ window.addEventListener('DOMContentLoaded', () => {
    0. 設定・手がかりデータ
    ===================================================================== */
 const CONFIG = {
-  BOARD: 3200,          // 盤面の一辺(px)。
-  cameraVideo: 'assets/cam01.mp4',      // 例: 'assets/cam01.mp4'。空なら疑似ライブ映像(Canvas→<video>)を自動生成
-  logoImage: 'assets/logo.png',        // 例: 'assets/logo.svg'。
+  BOARD: 3200,          
+  cameraVideo: 'assets/cam01.mp4',      
+  logoImage: 'assets/logo.png',        
   qrIntro: 'short',     
   };
-/* 調査委員会（赤い正方形）に被せる透過ロゴ */
+/* 調査委員会ロゴ */
 const COMMITTEE_LOGO = {
-src: 'assets/committee.png', // 空文字 '' で無効
-size: [0.7, 1.0], // ロゴの幅 ÷ 正方形の幅（最小, 最大）
-shiftX: 0.12,        // 中心からのずれの最大値（正方形の幅に対する比率）
+src: 'assets/committee.png', 
+size: [0.7, 1.0], 
+shiftX: 0.12,        
 shiftY: [-0.4, 0.4], 
-rotate: 25, // 傾きの最大値（度。±）
+rotate: 25, 
 };
 
-/* ★追加: サウンド設定 */
+/* サウンド設定 */
 const AUDIO_CONFIG = {
   bgm: 'assets/bgm.mp3',   // 常時流すBGM。空文字 '' にするとBGM機能ごと無効
   bgmVolume: 0.55,         // BGMの通常音量 (0〜1)
   // duckVolume: 0.16,        // 動画（音声あり）再生中にBGMを下げる音量
   // fadeMs: 900,             // 音量が切り替わる時の所要時間(ms)
-  sfxExplode: 'assets/sound_00.mp3',   // ★追加: タップの時の効果音。空文字 '' で無効
-  sfxVolume: 0.5,                     // ★追加: 効果音の音量 (0〜1)
+  sfxExplode: 'assets/sound_00.mp3',   // タップの時の効果音。空文字 '' で無効
+  sfxVolume: 0.5,                     // 効果音の音量 (0〜1)
   storageKey: 'shb-sound', // localStorageに保存するキー名 ('on' / 'off')
 };
 
-/* ★追加①: イントロで落下する画像（透過PNG）*/
+/* イントロで落下する画像（透過PNG）*/
 const INTRO_TEXTURES = ['assets/intro01.png','assets/intro02.png','assets/intro03.png'];
 const INTRO_TEX = {
   order: 'random',   // 'random'=ランダム / 'cycle'=配列の順に繰り返し
   ratio: 1,          // 画像を使う確率 0〜1（1=全部画像）
   size:  isMobile ? 3.0 : 2.0,   // 「一番大きい画像」の長辺の大きさ（単位 u）
-  relative: true,                // ★追加: true=画像同士の大きさの比を維持 / false=従来（全画像の長辺を揃える）
+  relative: true,                // true=画像同士の大きさの比を維持 / false=従来（全画像の長辺を揃える）
   hit:   .7,         // 当たり判定の縮小率（透明な余白ぶん小さくする）
 };
 
-/* ★追加③: 監視カメラ画像。添字がそのまま camId（0=通常 / 1〜10=異変） */
+/*  監視カメラ画像。添字がそのまま camId（0=通常 / 1〜10=異変） */
 // const CAM_IMAGES = [];
   /* 動画のループ時にノイズ演出を割り込ませてから先頭に戻す共通関数 */
 //  function triggerCamLoopNoise(targetVideo, noiseVideoEl) {
@@ -756,10 +749,10 @@ const INTRO_TEX = {
 // };
 
 const CAM_TRIGGER = { };   // 任意: 手がかりを開いた時に出す異変。例 { '001':3, '007':5 }
-/* ★追加: 場面切替の「ノイズ」を、用意した動画素材に置き換える。黒背景＋白ノイズ、音声あり前提 */
+/* 場面切替の「ノイズ」を、用意した動画素材に置き換える。黒背景＋白ノイズ、音声あり前提 */
 const NOISE_CLIPS = ['assets/noise_01.mp4', 'assets/noise_02.mp4', 'assets/noise_03.mp4', 'assets/noise_04.mp4', 'assets/noise_05.mp4', 'assets/noise_06.mp4', 'assets/noise_07.mp4', 'assets/noise_08.mp4', 'assets/noise_09.mp4', 'assets/noise_10.mp4'];   // 複数指定でランダムに選択。空配列 [] なら従来のCSSノイズに戻る
 const NOISE_MAX_MS = 1600;   // 動画の 'ended' が発火しない場合の保険（上限）
-const NOISE_VOL = 0;      // ★追加: ノイズ素材自体の再生音量 (0〜1)。BGMを下げる量（duckVolume）とは別の設定です
+const NOISE_VOL = 0;      // ノイズ素材自体の再生音量 (0〜1)。BGMを下げる量（duckVolume）とは別の設定です
 
 // URL:  ?item=cam1 / ?item=001 … / ?item=victim / ?item=committee
 const META = {
@@ -956,14 +949,14 @@ addFloat('kuwa2', mk('div','kuwa2','<b>桑</b><b>澤</b><small>くわさわ</sma
   addFloat('scrib'+i, mk('div','scrib',s[0]), { x:s[1], y:s[2], r:s[3], jit:25, rj:10, ampR:3, amp:1.4 });
 });
 
-/* --- スタンプ（極秘 / 調査中 …）--- */
+/* --- スタンプ--- */
 [['極秘','CLASSIFIED',600,285,-12],['調査中','UNDER INVESTIGATION',1000,1640,7],['禁帯出','DO NOT REMOVE',1650,1335,-6]].forEach((s,i) => {
   const el = mk('div','stamp',`${s[0]}<small>${s[1]}</small>`);
   el.style.fontSize = (30*K)+'px';
   addFloat('stamp'+i, el, { x:s[2], y:s[3], r:s[4], jit:40, rj:8 });
 });
 
-/* --- 証拠物の形と色（毎回ランダム）--- */
+/* --- 証拠物の形と色--- */
 function polyMarkup(n){
   const pts = [], a0 = rr(0,TAU);
   for(let i=0;i<n;i++){
@@ -1034,9 +1027,9 @@ lg.style.cssText = `position:absolute;right:auto;bottom:auto;margin:0;max-width:
 
 /* --- 監視カメラ（盤面に固定配置され、常時ループ再生） --- */
 let camVideo, camCanvas, camCtx, camTs, camImgEl, camLoad,camCur = -1, camSwapT = 0, camGlitchT = 0, camAutoT = 0;
-let camNoiseVid = null;   // ★追加: 盤面モニターのノイズ・トランジション用 <video>
+let camNoiseVid = null;   // 盤面モニターのノイズ・トランジション用 <video>
 let dosVideoEl = null;
-let dosNoiseVid = null;   // ★追加: ポップアップ側（CAM01を開いている時のみ）のノイズ・トランジション用 <video>
+let dosNoiseVid = null;   // ポップアップ側（CAM01を開いている時のみ）のノイズ・トランジション用 <video>
 {
   const el = mk('div','cam'); el.dataset.key = 'cam1';
   el.innerHTML = '<div class="scr"><canvas width="320" height="180"></canvas><video muted loop playsinline autoplay preload="metadata"></video><img class="camimg" alt=""><video class="camNoiseVid" muted playsinline preload="none"></video><div class="tint"></div><div class="scan"></div><div class="roll"></div><div class="camload"><span class="dl-txt dl-ok">LOADING<span class="dl-dots"><i>.</i><i>.</i><i>.</i></span></span><span class="dl-txt dl-ng">NO SIGNAL</span></div>'
@@ -1237,7 +1230,7 @@ function drawCover(g, src, w, h){                          // <img> を object-f
   g.drawImage(src, (w - sw*k)/2, (h - sh*k)/2, sw*k, sh*k);
 }
 
-/* ★追加: ノイズ素材を使ったトランジション本体。使える素材が無ければ false を返す（呼び出し側で従来のCSSノイズにフォールバック） */
+/* ノイズ素材を使ったトランジション本体。使える素材が無ければ false を返す（呼び出し側で従来のCSSノイズにフォールバック） */
 function pickNoiseClip(){ return NOISE_CLIPS[Math.floor(Math.random() * NOISE_CLIPS.length)]; }
 function runNoiseTransition(onSwap){
   if(!NOISE_CLIPS.length || RM) return false;                       // reduced-motion時は使わない（従来どおり即切替）
@@ -1266,7 +1259,7 @@ function runNoiseTransition(onSwap){
   if(!NOISE_CLIPS.length || RM) return false;
   const vids = [camNoiseVid, dosNoiseVid].filter(Boolean);
   if(!vids.length) return false;
-  const boxes = [camImgEl.parentNode, dMedia];                        // ★追加: 従来のグリッチ（歪み・暗転）も同時に出す対象
+  const boxes = [camImgEl.parentNode, dMedia];                        // 従来のグリッチ（歪み・暗転）も同時に出す対象
   const src = pickNoiseClip();
   let pending = vids.length, swapped = false;
   // if(soundOn) duckBgm(true);
@@ -1289,7 +1282,7 @@ function runNoiseTransition(onSwap){
   };
   vids.forEach((vid, i) => {
     vid.muted = !soundOn; if(soundOn) vid.removeAttribute('muted'); else vid.setAttribute('muted','');
-    vid.volume = NOISE_VOL;                                           // ★追加: 素材自体の音量
+    vid.volume = NOISE_VOL;                                           // 素材自体の音量
     vid.src = src; vid.currentTime = 0; vid.classList.add('show');
     vid.play().catch(() => {});
     let done = false;
@@ -1319,7 +1312,7 @@ function runNoiseTransition(onSwap){
 // }
 
 
-/* ---------- ★追加: サウンド管理（BGM＋動画音声） ---------- */
+/* ---------- サウンド管理（BGM＋動画音声） ---------- */
 const bgm = $('#bgm');
 if(AUDIO_CONFIG.bgm) bgm.src = AUDIO_CONFIG.bgm;
 let soundOn = false, soundChosen = false, duckLevel = 0;
@@ -1359,22 +1352,22 @@ function syncSoundToggleUI(){                              // ★追加
 //   duckLevel += on ? 1 : -1; duckLevel = Math.max(0, duckLevel);
 //   if(soundOn && !bgm.paused) fadeVol(bgm, duckLevel ? AUDIO_CONFIG.duckVolume : AUDIO_CONFIG.bgmVolume, AUDIO_CONFIG.fadeMs);
 // }
-syncSoundToggleUI();                                                    // ★追加: 保存済み設定を反映した時点の表示を合わせる
-if(!window.__soundToggleBound){                                         // ★追加: 保険
+syncSoundToggleUI();                                                    // 保存済み設定を反映した時点の表示を合わせる
+if(!window.__soundToggleBound){                                         // 保険
   $('#soundToggle').addEventListener('click', () => setSound(!soundOn));
   window.__soundToggleBound = true;
 }
 
 
 
-const sfxExplode = AUDIO_CONFIG.sfxExplode ? new Audio(AUDIO_CONFIG.sfxExplode) : null;   // ★追加: 
+const sfxExplode = AUDIO_CONFIG.sfxExplode ? new Audio(AUDIO_CONFIG.sfxExplode) : null;   // 
 if(sfxExplode) sfxExplode.preload = 'auto';
 function playExplodeSfx(){                                                                // ★追加
   if(!soundOn || !sfxExplode) return;
   sfxExplode.currentTime = 0; sfxExplode.volume = AUDIO_CONFIG.sfxVolume;
   sfxExplode.play().catch(() => {});
 }
-/* ---------- ★追加: バックグラウンド（他アプリ切替・ホーム画面・タブ非表示）で音声を止める ---------- */
+/* ---------- バックグラウンド（他アプリ切替・ホーム画面・タブ非表示）で音声を止める ---------- */
 let wasBgmPlaying = false, wasVideoPlaying = false;
 function onAppHidden(){
   wasBgmPlaying = soundOn && !bgm.paused;
@@ -1624,8 +1617,8 @@ function mountMedia(key, m){
     return;
   }
 
-  dosVideoEl = null;                                                   // ★追加: 前の手がかりの状態を引き継がない
-  dosNoiseVid = null;   // ★追加: ノイズ・トランジション用videoも同様にリセット
+  dosVideoEl = null;                                                   // 前の手がかりの状態を引き継がない
+  dosNoiseVid = null;   // ノイズ・トランジション用videoも同様にリセット
 
   if(src && isImageSrc(src)){                                          // 画像ならポップアップは <img>
     const ld = mkLoading();
@@ -1668,7 +1661,7 @@ function mountMedia(key, m){
     // ★盤面カメラの連動: 動画手がかりを開いた場合、盤面カメラにも同じ動画を流す
     if(camVideo && item.video) setCamSrc(item.video);
 
-    // ★追加: 動画の再生開始・ループ（seeked）時にグリッチ演出
+    // 動画の再生開始・ループ（seeked）時にグリッチ演出
     v.addEventListener('play', () => {
       triggerMediaGlitch(dMedia, 400);
     });
@@ -1679,7 +1672,7 @@ function mountMedia(key, m){
     const startPlay = () => {
       const playPromise = v.play();
       if (playPromise !== undefined) {
-        playPromise.catch(() => { if(!v.muted){ v.muted = true; v.play().catch(()=>{}); } });   // ★追加: 音声あり再生が拒否された場合は無音で再生を継続
+        playPromise.catch(() => { if(!v.muted){ v.muted = true; v.play().catch(()=>{}); } });   // 音声あり再生が拒否された場合は無音で再生を継続
       }
     };
     // if(soundOn) v.addEventListener('playing', () => duckBgm(true), { once:true });   // ★修正
@@ -1700,7 +1693,7 @@ function mountMedia(key, m){
     dMedia.appendChild(c);
     dosCanvas = c;
     dosMirror = key === 'cam1';
-    if(dosMirror){                                                     // ★追加: CAM01を開いている時だけ、ノイズ・トランジション用videoを用意
+    if(dosMirror){                                                     // CAM01を開いている時だけ、ノイズ・トランジション用videoを用意
       dosNoiseVid = mk('video','dosNoiseVid'); dosNoiseVid.muted = true; dosNoiseVid.setAttribute('playsinline','');
       dMedia.appendChild(dosNoiseVid);
     }
@@ -1720,8 +1713,8 @@ function mountMedia(key, m){
 //   const item = m || {};
 //   const src = item.video || item.image || (key === 'cam1' ? (typeof CONFIG !== 'undefined' ? CONFIG.cameraVideo : '') : '');
   
-//    dosVideoEl = null;                                                   // ★追加: 前の手がかりの状態を引き継がない
-//    dosNoiseVid = null;   // ★追加: ノイズ・トランジション用videoも同様にリセット
+//    dosVideoEl = null;                                                   // 前の手がかりの状態を引き継がない
+//    dosNoiseVid = null;   // ノイズ・トランジション用videoも同様にリセット
 //   if(src && isImageSrc(src)){                                          // 画像ならポップアップは <img>
 //     const im = mk('img'); im.src = src; im.alt = ''; im.draggable = false;
 //     im.addEventListener('error', () => im.remove());
@@ -1743,7 +1736,7 @@ function mountMedia(key, m){
 
 //     dMedia.appendChild(v);
 //     dosVideoEl = v;                                                    // ★追加
-//     // ★追加: 動画の再生開始・ループ（seeked）時にグリッチ演出を発火
+//     // 動画の再生開始・ループ（seeked）時にグリッチ演出を発火
 //     v.addEventListener('play', () => {
 //       triggerMediaGlitch(dMedia, 400);
 //     });
@@ -1757,7 +1750,7 @@ function mountMedia(key, m){
 //     const startPlay = () => {
 //       const playPromise = v.play();
 //       if (playPromise !== undefined) {
-//         playPromise.catch(() => { if(!v.muted){ v.muted = true; v.play().catch(()=>{}); } });   // ★追加: 音声あり再生が拒否された場合は無音で再生を継続
+//         playPromise.catch(() => { if(!v.muted){ v.muted = true; v.play().catch(()=>{}); } });   // 音声あり再生が拒否された場合は無音で再生を継続
 //       }
 //     };
 //     if(soundOn) v.addEventListener('playing', () => duckBgm(true), { once:true });   // ★修正
@@ -1778,7 +1771,7 @@ function mountMedia(key, m){
 //     dMedia.appendChild(c);
 //     dosCanvas = c;
 //     dosMirror = key === 'cam1';
-//     if(dosMirror){                                                     // ★追加: CAM01を開いている時だけ、ノイズ・トランジション用videoを用意
+//     if(dosMirror){                                                     // CAM01を開いている時だけ、ノイズ・トランジション用videoを用意
 //     dosNoiseVid = mk('video','dosNoiseVid'); dosNoiseVid.muted = true; dosNoiseVid.setAttribute('playsinline','');
 //     dMedia.appendChild(dosNoiseVid);
 // }
@@ -1813,7 +1806,7 @@ function closeDossier(){
   dossierEl.classList.remove('open'); dossierEl.classList.add('closing');
   document.body.classList.remove('dos-open'); setActive(null); dosKey = null;
 
-  // ★追加: 詳細を閉じたら盤面の監視カメラ(camVideo)を初期動画に戻す
+  // 詳細を閉じたら盤面の監視カメラ(camVideo)を初期動画に戻す
   if(camVideo && CONFIG.cameraVideo) setCamSrc(CONFIG.cameraVideo);
   syncUrl(null);
   clearTimeout(mountT);
@@ -1823,7 +1816,7 @@ function closeDossier(){
 $('#dClose').addEventListener('click', closeDossier);
 addEventListener('keydown', e => { if(e.key === 'Escape' && !infoDlg.open) closeDossier(); if((e.key === 'Enter' || e.key === ' ') && intro.active && intro.ready && !intro.exploded){ e.preventDefault(); explode(innerWidth/2, innerHeight*.75); } });
 
-/* ---------- ★追加: 制作情報ダイアログ ---------- */
+/* ---------- 制作情報ダイアログ ---------- */
 const infoDlg = $('#infoDlg'), infoBtn = $('#infoBtn');
 let infoCloseT = 0, infoDownOnBackdrop = false;
 function openInfo(){
@@ -1998,7 +1991,7 @@ function introInit(qrKey){
   introMsg.textContent = '';
   introEl.addEventListener(isMobile ? 'click' : 'pointerdown', e => {   // iOSは指を離した時(click)でないと音声再生が許可されない
     if(intro.ready && !intro.exploded && !soundGateOpen){    // ★変更: 確認UI表示中はタップで開始させない
-      if(soundChosen && soundOn) startBgm();                 // ★追加: 前回「音声あり」を選んでいた場合はここでBGM再生開始
+      if(soundChosen && soundOn) startBgm();                 // 前回「音声あり」を選んでいた場合はここでBGM再生開始
       explode(e.clientX, e.clientY);
     }
   });
