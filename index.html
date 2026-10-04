@@ -347,7 +347,7 @@ body.dos-open #infoBtn{opacity:0;pointer-events:none}   /* 手がかり詳細が
 @keyframes fuwa{0%{transform:translate3d(0,0,0) rotate(-1.4deg)}50%{transform:translate3d(7px,-11px,0) rotate(.9deg)}100%{transform:translate3d(-6px,4px,0) rotate(-.5deg)}}
 .dpin{position:absolute;left:50%;top:-9px;width:18px;height:18px;margin-left:-9px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffb0b0,#c40f0f 45%,#5a0505);box-shadow:0 3px 6px rgba(0,0,0,.5)}
 .dclose{position:absolute;right:6px;top:4px;width:36px;height:36px;border:0;background:transparent;color:#0d0d0d;font:400 26px/1 var(--serif);cursor:pointer}
-.dtag{font:500 14px/1.2 var(--serif);letter-spacing:.12em;display:flex;gap:.9em;align-items:baseline;margin:0 40px 10px 0}
+.dtag{font:500 14px/1.2 var(--mono);letter-spacing:.12em;display:flex;gap:.9em;align-items:baseline;margin:0 40px 10px 0}
 .dtag #dTag{font:800 22px/1 var(--serif);letter-spacing:.04em}
 .dmedia{position:relative;aspect-ratio:16/9;background:#111;margin-bottom:14px;overflow:hidden}
 .dmedia canvas,.dmedia video,.dmedia img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -566,12 +566,11 @@ body.lite .cam video,body.lite .cam canvas,body.lite .cam .camimg{filter:none}
     <h2 id="infoTitle">白昼夢現象調査委員会</h2>
     <p class="info-sub">KUWASAWA DESIGN SCHOOL</p>
     <dl class="info-list">
-      <div><dt>企画・制作</dt><dd>K&T</dd></div>
-      <div><dt>映像</dt><dd>K&T</dd></div>
-      <div><dt>展示</dt><dd><a href="https://instagram.com/egg___0141" target="_blank" rel="noopener">K</a></dd></div>
-      <div><dt>WEB</dt><dd><a href="https://instagram.com/churroigc" target="_blank" rel="noopener">T</a></dd></div>
-      <div><dt>SNS</dt><dd><a href="https://instagram.com/hakuchumu_phenomenon" target="_blank" rel="noopener">@hakuchumu_phenomenon</a></dd></div>
-      <div><dt>バージョン</dt><dd>v0.9.5</dd></div>
+      <div><dt>企画・制作・映像</dt><dd>K&T</dd></div>
+      <div><dt>展示</dt><dd><a href="https://instagram.com/egg___0141" target="_blank" rel="noopener">KITANO Yuto</a></dd></div>
+      <div><dt>WEB</dt><dd><a href="https://instagram.com/churroigc" target="_blank" rel="noopener">TANAKA Ryuki</a></dd></div>
+      <div><dt></dt><dd><a href="https://instagram.com/hakuchumu_phenomenon" target="_blank" rel="noopener">@hakuchumu_phenomenon</a></dd></div>
+      <div><dt>バージョン</dt><dd>v0.9.6</dd></div>
       <div><dt>公開日</dt><dd>2026.10.XX</dd></div>
         <!-- ★追加 -->
       <div><dt>サウンド</dt><dd>
@@ -677,6 +676,14 @@ const CONFIG = {
   cameraVideo: 'assets/cam01.mp4',      // 例: 'assets/cam01.mp4'。空なら疑似ライブ映像(Canvas→<video>)を自動生成
   logoImage: 'assets/logo.png',        // 例: 'assets/logo.svg'。
   qrIntro: 'short',     
+  };
+/* 調査委員会（赤い正方形）に被せる透過ロゴ */
+const COMMITTEE_LOGO = {
+src: 'assets/committee.png', // 空文字 '' で無効
+size: [0.7, 1.0], // ロゴの幅 ÷ 正方形の幅（最小, 最大）
+shiftX: 0.12,        // 中心からのずれの最大値（正方形の幅に対する比率）
+shiftY: [-0.4, 0.4], 
+rotate: 25, // 傾きの最大値（度。±）
 };
 
 /* ★追加: サウンド設定 */
@@ -686,7 +693,7 @@ const AUDIO_CONFIG = {
   // duckVolume: 0.16,        // 動画（音声あり）再生中にBGMを下げる音量
   // fadeMs: 900,             // 音量が切り替わる時の所要時間(ms)
   sfxExplode: 'assets/sound_00.mp3',   // ★追加: タップの時の効果音。空文字 '' で無効
-  sfxVolume: 0.8,                     // ★追加: 効果音の音量 (0〜1)
+  sfxVolume: 0.5,                     // ★追加: 効果音の音量 (0〜1)
   storageKey: 'shb-sound', // localStorageに保存するキー名 ('on' / 'off')
 };
 
@@ -703,8 +710,8 @@ const INTRO_TEX = {
 /* ★追加③: 監視カメラ画像。添字がそのまま camId（0=通常 / 1〜10=異変） */
 // const CAM_IMAGES = [];
   /* 動画のループ時にノイズ演出を割り込ませてから先頭に戻す共通関数 */
-// function triggerCamLoopNoise(targetVideo, noiseVideoEl) {
-//   if (!targetVideo) return;
+//  function triggerCamLoopNoise(targetVideo, noiseVideoEl) {
+//    if (!targetVideo) return;
   
 //   // ノイズ動画素材（NOISE_CLIPS）が定義されている場合
 //   if (noiseVideoEl && typeof NOISE_CLIPS !== 'undefined' && NOISE_CLIPS.length) {
@@ -726,9 +733,9 @@ const INTRO_TEX = {
 //       noiseVideoEl.removeEventListener('ended', finishNoise);
       
 //       // ノイズ終了後に動画を最初から再開
-//       targetVideo.currentTime = 0;
-//       targetVideo.play().catch(() => {});
-//     };
+    //    targetVideo.currentTime = 0;
+    //    targetVideo.play().catch(() => {});
+    //  };
 
 //     noiseVideoEl.addEventListener('ended', finishNoise);
 //     setTimeout(finishNoise, typeof NOISE_MAX_MS !== 'undefined' ? NOISE_MAX_MS : 1200);
@@ -757,37 +764,37 @@ const NOISE_VOL = 0;      // ★追加: ノイズ素材自体の再生音量 (0�
 // URL:  ?item=cam1 / ?item=001 … / ?item=victim / ?item=committee
 const META = {
   cam1: { tag:'CAM01', sub:'監視カメラ', title:'32教室',
-    body:'度々「現象」が報告されている教室。調査中は常に状態を記録し「現象」の発生に備えている。',
-    note:'REC 2026.10.04 - 2026.10.05', video:'assets/cam01.mp4', poster:'', image:'' },
+    body:'度々「白昼夢」が報告されている教室。調査中は常に状態を記録し「白昼夢」の発生に備えている。',
+    note:'REC 2026.10.05 -', video:'assets/cam01.mp4', poster:'', image:'' },
   '001': { tag:'#001', sub:'現象記録', title:'6階工作室',
-    body:'',
+    body:'6階工作室において､室内に常設されているペンチ類の一部が所定の位置から移動していることが確認された｡所在確認を目的として室内監視カメラの記録映像を確認したところ､異常現象と思われる映像が記録されていた｡',
     note:'発生日時：2026/05/24(日) 16:42 / 目撃者：0名', video:'assets/v001.mp4', poster:'', image:'assets/001p.jpg' },
   '002': { tag:'#002', sub:'現象記録', title:'2階図書館',
-    body:'',
-    note:'発生日時：2026/06/28(日) 14:18 / 目撃者：0名', video:'assets/v002.mp4', poster:'', image:'assets/002p.jpg' },
+    body:'2階図書館に設置された監視カメラの映像より､書架に収められていた複数の書籍が､外部からの接触が確認できない状態で移動する現象が確認された｡',
+    note:'発生日時：2026/06/28(日) 14:18 / #CAM：002', video:'assets/v002.mp4', poster:'', image:'assets/002p.jpg' },
   '003': { tag:'#003', sub:'現象記録', title:'5階エレベーターホール',
-    body:'',
+    body:'5階エレベーターホールに設置された監視カメラより、天井棚に置かれていたダンボールが激しく███████する現象が確認された。',
     note:'発生日時：2026/08/07(金) 10:46 / 目撃者：2名', video:'assets/v003.mp4', poster:'', image:'assets/003p.jpg'},
   '004': { tag:'#004', sub:'現象記録', title:'81教室',
-    body:'',
+    body:'81教室内に設置された2基のブラインドが、外部からの接触が確認されていない状態で同時に動き始める現象が確認された。',
     note:'発生日時：2026/09/02(水) 12:56 / 目撃者：1名', video:'assets/v004.mp4', poster:'', image:'assets/004p.jpg' },
   '005': { tag:'#005', sub:'発見物', title:'-',
-    body:'',
+    body:'2026年9月14日(月)､ 校内清掃中の清掃員により､ ███にて一つの書類入れが発見された｡書類入れは███付近に不自然に放置されており､所有者の手がかりは確認されなかった。',
     note:'発生日時：2026/09/14(月)- / 発見者：清掃員', video:'', poster:'', image:'' },
   '006': { tag:'#006', sub:'現象記録', title:'7階学生ホール',
-    body:'',
+    body:'７階学生ホールにおいて、室内に設置されていた複数の椅子が、外部からの接触を受けることなく移動する現象が確認された。現象発生時、学生ホールでは複数名の学生が作業を行っていたが、作業をしていた学生のうちほとんどの学生が本現象を目撃していなかった。',
     note:'発生日時：2026/09/15(火) 17:40 / 目撃者：27名', video:'assets/v006.mp4', poster:'', image:'assets/006p.jpg' },
   '007': { tag:'#007', sub:'現象記録', title:'5階コンピュータ室',
-    body:'',
-    note:'発生日時：2026/09/21(月) 19:56 / 目撃者：0名', video:'assets/v007.mp4', poster:'', image:'assets/007p.jpg' },
+    body:'５階コンピュータ室に設置されたPCの一部において､画面全体が上下方向へ激しく動く現象が確認された｡現象発生時､本委員会所属の調査員1名が同室内で睡眠を取っていた｡目覚めた調査員が監視映像を確認したところ､自身が夢の中で目撃したものとほぼ同一の現象が､同時刻の現実のコンピュータ室の映像でも発生していたことが判明した｡',
+    note:'発生日時：2026/09/21(月) 19:56 / #CAM：007', video:'assets/v007.mp4', poster:'', image:'assets/007p.jpg' },
   '008': { tag:'#008', sub:'現象記録', title:'1階くわかべ',
-    body:'',
-    note:'発生日時：2026/10/05(月) 15:31 / 目撃者：██名', video:'', poster:'', image:'' },
+    body:'1階｢くわかべ｣において､複数の机および椅子が不規則に配置された状態で出現していることが確認された｡机と椅子は一定の規則性を持たず､空間内に疎らに配置されており､その周囲にはこれまで本委員会が作成・保管していたものと一致する調査資料が無数に散在していた｡',
+    note:'発生日時：2026/10/05(月) 15:31 / #CAM：008', video:'', poster:'', image:'' },
   '009': { tag:'#009', sub:'調査記録', title:'3階32教室',
-    body:'',
+    body:'██████████████、████████。████████████。',
     note:'日時：10月某日 ／ 目撃者：████', video:'', poster:'', image:'' },
   victim: { tag:'被害者', sub:'', title:'氏名：████',
-    body:'最後の目撃は15:12。調査中に現象に飲み込まれたとみられている。',
+    body:'10月10日に発生すると見られる白昼夢現象に対する調査のため、█月█日32教室に派遣された調査員。調査中に現象に飲み込まれたとみられ、捜索が続けられている。',
     note:'状態：捜索中', video:'', poster:'', image:'' },
   committee: { tag:'調査委員会', sub:'', title:'白昼夢現象調査委員会',
     body:'近頃、桑沢周辺で巻き起こっている「白昼夢」の謎。我々は現象の原因を調べるべく、「白昼夢」の調査を開始した。',
@@ -1006,9 +1013,22 @@ CARD_POS.forEach((c,i) => {
   if(META.victim.image) el.appendChild(makePic(META.victim.image));   // ★追加
   addFloat('victim', el, { x:760, y:1055, r:0, rj:3, jit:18, ext:300, pin:[0,0], amp:.8 });
 }
-{ // 調査委員會（赤い正方形）
+{ // 調査委員会（赤い正方形）
   const el = mk('div','committee'); el.dataset.key = 'committee';
-  el.innerHTML = '<div class="sq"></div><div class="ct">桑沢学園白昼夢<span>現象調査委員會</span></div>';
+  el.innerHTML = '<div class="sq"></div><div class="ct">桑沢学園白昼夢<span>現象調査委員会</span></div>';
+  	if(COMMITTEE_LOGO.src){ // 赤い正方形の上に、透過ロゴをランダムな傾き・位置で被せる（読み込みのたびに変わる / ?seed= で固定可）
+  const lg = mk('img','clogo'); lg.src = COMMITTEE_LOGO.src; lg.alt = ''; lg.draggable = false; lg.decoding = 'async';
+      const CL = Object.assign({ size:[0.7,1.0], shiftX:0.12, shiftY:[0.45,0.75], rotate:25 }, COMMITTEE_LOGO);	
+  const num = (v, d) => Number.isFinite(+v) ? +v : d;	
+  const rng = (a, d) => Array.isArray(a) && a.length >= 2 ? [num(a[0], d[0]), num(a[1], d[1])] : d;
+  const sz = rng(CL.size, [0.7,1.0]), sy = rng(CL.shiftY, [0.45,0.55]), sx = Math.abs(num(CL.shiftX, 0.12)), rot = Math.abs(num(CL.rotate, 25));
+  const SW = 196*K, SH = 202*K; // 赤い四角の実寸(px)	
+const w = rr(sz[0], sz[1]) * SW;	
+const cx = SW/2 + rr(-sx, sx) * SW, cy = SH/2 + rr(sy[0], sy[1]) * SH; // ロゴの中心。縦は下方向(+)に寄せる	
+lg.style.cssText = `position:absolute;right:auto;bottom:auto;margin:0;max-width:none;width:${w.toFixed(1)}px;height:auto;left:${(cx - w/2).toFixed(1)}px;top:${cy.toFixed(1)}px;transform:translateY(-50%) rotate(${rr(-rot, rot).toFixed(1)}deg);transform-origin:50% 50%`;
+  lg.addEventListener('error', () => lg.remove()); // 画像が無い時は何も出さない
+  el.querySelector('.sq').after(lg);
+}
   addFloat('committee', el, { x:1062, y:1030, r:4, rj:3, jit:18, ext:360, amp:.8 });
 }
 
@@ -1124,13 +1144,9 @@ camVideo.addEventListener('error', () => { if(camLoad){ camLoad.classList.remove
   if(CONFIG.cameraVideo){
     camMode = 'video';
     camVideo.src = CONFIG.cameraVideo;
-    camVideo.removeAttribute('loop'); // JSで終端（ループ時）のノイズ演出を拾うため属性を除去
+    camVideo.loop = true;
+    camVideo.setAttribute('loop','');
     camVideo.play().catch(() => {});
-    
-    // 映像が終端に達した（ループする）タイミングでノイズ演出を発生させる
-    camVideo.addEventListener('ended', () => {
-      triggerCamLoopNoise(camVideo, camNoiseVid);
-    });
     return;
   }
 }
@@ -1580,6 +1596,15 @@ const ldShow = d => d && d.classList.remove('off','fail');
 const ldHide = d => d && d.classList.add('off');	
 const ldFail = d => { if(d){ d.classList.remove('off'); d.classList.add('fail'); } };
 let mountT = 0;
+
+	/* 動画の再生開始/ループ時の軽いグリッチ（未定義だったため補完） */
+function triggerMediaGlitch(box, ms){
+if(!box || RM) return;
+box.style.setProperty('--gl', ((ms || 300)/1000) + 's');
+box.classList.remove('is-glitching'); void box.offsetWidth; box.classList.add('is-glitching');
+setTimeout(() => box.classList.remove('is-glitching'), ms || 300);
+}
+
 function mountMedia(key, m){
   clearTimeout(mountT); releaseMedia(dMedia);
   dMedia.innerHTML = ''; dosCanvas = null; dosMirror = false;
@@ -1771,14 +1796,14 @@ function openDossier(key){
   mountMedia(key, m);
 
   // ★追加：ポップアップ内の動画（#001等）に対するループ時ノイズ処理の設定
-  const dosVid = $('#dMedia video');
-  if (dosVid) {
-    // dosVid.removeAttribute('loop'); // 標準ループを解除
-    dosVid.addEventListener('ended', () => {
-      const dosNoise = $('#dMedia .dosNoiseVid') || $('#dMedia video.dosNoiseVid');
-      triggerCamLoopNoise(dosVid, dosNoise);
-    });
-  }
+  // const dosVid = $('#dMedia video');
+  // if (dosVid) {
+  //   // dosVid.removeAttribute('loop'); // 標準ループを解除
+  //   dosVid.addEventListener('ended', () => {
+  //     const dosNoise = $('#dMedia .dosNoiseVid') || $('#dMedia video.dosNoiseVid');
+  //     triggerCamLoopNoise(dosVid, dosNoise);
+  //   });
+  // }
   dossierEl.hidden = false; dossierEl.classList.remove('closing'); void dossierEl.offsetWidth; dossierEl.classList.add('open');
   document.body.classList.add('dos-open'); setActive(key);
 }
@@ -1824,6 +1849,7 @@ const TAP_SLOP = isMobile ? 16 : 10, TAP_MS = isMobile ? 600 : 500;   // 指の�
 addEventListener('pointerdown', e => {
   activePtrs.add(e.pointerId);
   if(intro.active || !viewport.contains(e.target)) { down = null; return; }
+  userMoved = true;
   cancelFlight(); viewport.classList.add('grabbing');
   down = activePtrs.size > 1 ? null : { x:e.clientX, y:e.clientY, t:performance.now(), id:e.pointerId };
 }, true);
@@ -2003,7 +2029,7 @@ function explode(px, py){
   setTimeout(startReveal, 120);
 }
 function startReveal(){
-  if(intro.qrKey && IN_PLACE){ const k = intro.qrKey; setTimeout(() => openDossier(k), 500); }   // スマホ: すでに該当位置に居るので長距離の移動はせず、そのまま詳細を開く
+  if(intro.qrKey && IN_PLACE){ const k = intro.qrKey; cancelFlight(); holdItemCamSoon(); setTimeout(() => { holdItemCam(); openDossier(k); holdItemCamSoon(); }, 500); } // スマホ: すでに該当位置に居るので長距離の移動はせず、そのまま詳細を開く
   else if(intro.qrKey){ selectItem(intro.qrKey, { delayOpen:true, dur:3600, ease:easeInOutCubic }); }
   else { const h = homeView(); flyTo(h.x, h.y, h.s, { dur:2400, ease:easeOutCubic, bump:0 }); }
   if(!intro.qrKey){ const hint = $('#hint'); setTimeout(() => { hint.classList.add('show'); setTimeout(() => hint.classList.remove('show'), 7000); }, 2400); }
@@ -2105,7 +2131,7 @@ function tick(now){
       const id = g.createImageData(320,180), d = id.data;
       for(let i=0;i<d.length;i+=4){ const v = Math.random()*110|0; d[i] = d[i+1] = d[i+2] = v; d[i+3] = 255; }
       g.putImageData(id,0,0); g.fillStyle = 'rgba(255,255,255,.1)'; g.fillRect(0, (t*50)%180, 320, 12);
-      g.fillStyle = '#fff'; g.font = '700 17px monospace'; g.textAlign = 'center'; g.fillText('NO DATA', 160, 92);
+      g.fillStyle = '#fff'; g.font = '700 17px "WDXL Lubrifont JP N"'; g.textAlign = 'center'; g.fillText('NO DATA', 160, 92);
     }
   }
   if(intro.active && intro.ctx) introTick(now, dt);
@@ -2130,6 +2156,20 @@ function introCam(){
     cam.view(v.x, v.y, clamp(v.s, limits.min, limits.max), v.ax, v.ay);
   }else{ const h = homeView(); cam.view(h.x, h.y, h.s*2.3); }
 }
+
+	/* スマホ+?item=: 該当アイテムの位置にカメラを据え直す。Panzoomの初期化・ブラウザのバー伸縮(resize)などで
+位置がずれても、ユーザーが盤面を触るまでは何度でもアイテム位置へ戻す */
+let userMoved = false;
+function holdItemCam(){
+if(!(IN_PLACE && introQrKey && byKey[introQrKey]) || userMoved) return;
+introCam();
+}
+function holdItemCamSoon(){
+holdItemCam();
+requestAnimationFrame(() => { holdItemCam(); requestAnimationFrame(holdItemCam); });
+[120, 400, 900].forEach(ms => setTimeout(holdItemCam, ms));
+}
+
 let introPrevW = innerWidth;
 function introReflow(){
   if(!intro.ctx) return;                                   // introInit 前は何もしない
@@ -2151,6 +2191,7 @@ function introReflow(){
 addEventListener('resize', () => {
   applyZoomMode();
   if(intro.active){ introResize(); intro.W = innerWidth; intro.H = innerHeight; if(!intro.exploded){ introCam(); if(isMobile) introReflow(); } }
+  holdItemCamSoon();
 });
 
 /* =====================================================================
@@ -2159,7 +2200,7 @@ addEventListener('resize', () => {
 (function boot(){
   const qrKey = resolveKey(params.get('item'));
   const h = homeView();
-  introQrKey = qrKey; introCam();       // 導入中は盤面を大きく寄せておき、爆発と同時に引いて空間を広げる（スマホ+?item=は該当位置から開始）
+  introQrKey = qrKey; introCam(); holdItemCamSoon();       // 導入中は盤面を大きく寄せておき、爆発と同時に引いて空間を広げる（スマホ+?item=は該当位置から開始）
   if(qrKey && CONFIG.qrIntro === 'none'){
     introEl.style.display = 'none'; intro.active = false; document.body.classList.add('ready');
     cam.view(h.x, h.y, h.s); selectItem(qrKey, { delayOpen:true, dur:2600 });
