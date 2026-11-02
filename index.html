@@ -44,7 +44,7 @@
   --mono:"WDXL Lubrifont JP N","Share Tech Mono","SF Mono",Menlo,Consolas,monospace;
   /* --sans:"Gill Sans","Gill Sans MT","Helvetica Neue",Arial,sans-serif; */
   --sans:"WDXL Lubrifont JP N","Gill Sans","Gill Sans MT","Helvetica Neue",Arial,sans-serif;
-  --red:#ff2a2a;
+  --red:#ff2020;
   --paper:#b3b3b3;
 }
 html,body{margin:0;height:100%;background:#262626;overflow:hidden;overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%;
@@ -208,7 +208,7 @@ html, body {
 .cam .lbl{position:absolute;left:calc(14px*var(--k));top:calc(18px*var(--k));font:500 calc(26px*var(--k))/1 var(--serif);color:#fff;letter-spacing:.06em;text-shadow:0 0 6px rgba(0,0,0,.7)}
 .cam .cid{position:absolute;left:calc(22px*var(--k));bottom:calc(14px*var(--k));font:400 calc(21px*var(--k))/1 var(--sans);color:#fff;letter-spacing:.06em;text-shadow:0 0 5px rgba(0,0,0,.7)}
 .cam .ts{position:absolute;right:calc(18px*var(--k));bottom:calc(14px*var(--k));font:400 calc(16px*var(--k))/1 var(--sans);color:#fff;letter-spacing:.04em;text-shadow:0 0 5px rgba(0,0,0,.7)}
-.cam .rec{position:absolute;right:calc(14px*var(--k));top:calc(14px*var(--k));width:calc(16px*var(--k));height:calc(16px*var(--k));border-radius:50%;background:#ff2229;animation:recb 1.2s steps(1) infinite}
+.cam .rec{position:absolute;right:calc(14px*var(--k));top:calc(14px*var(--k));width:calc(8px*var(--k));height:calc(8px*var(--k));border-radius:50%;background:#ff2229;animation:recb 1.2s steps(1) infinite}
 @keyframes recb{0%,60%{opacity:1}61%,100%{opacity:.15}}
 
 /* スタンプ */
@@ -278,7 +278,7 @@ body.ready #hud{opacity:1}
 }
 #infoBtn svg{width:20px;height:20px;fill:currentColor}
 #infoBtn::after{                                   /* REC ランプ風の赤い点（既存の recb を流用） */
-  content:'';position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;
+  content:'';position:absolute;top:5px;right:5px;width:5px;height:5px;border-radius:50%;
   background:var(--red);animation:recb 1.2s steps(1) infinite;
 }
 @media (hover:hover){
@@ -353,7 +353,7 @@ body.dos-open #infoBtn{opacity:0;pointer-events:none}   /* 手がかり詳細が
 @keyframes dosOut{0%{opacity:1}100%{opacity:0;transform:translateY(30px) scale(.8) rotate(4deg)}}
 .dcard{position:relative;background:var(--paper);color:#0d0d0d;padding:22px 20px 20px;box-shadow:0 22px 60px rgba(0,0,0,.65);max-height:calc(100vh - 48px);overflow:auto;pointer-events:auto;animation:fuwa 6.5s ease-in-out infinite alternate;-webkit-user-select:text;user-select:text}
 @keyframes fuwa{0%{transform:translate3d(0,0,0) rotate(-1.4deg)}50%{transform:translate3d(7px,-11px,0) rotate(.9deg)}100%{transform:translate3d(-6px,4px,0) rotate(-.5deg)}}
-.dpin{position:absolute;left:50%;top:-9px;width:18px;height:18px;margin-left:-9px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffb0b0,#c40f0f 45%,#5a0505);box-shadow:0 3px 6px rgba(0,0,0,.5)}
+.dpin{position:absolute;left:50%;top:-9px;width:18px;height:18px;margin-left:-9px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f7f7f7,#dbdbdb 45%,#808080);box-shadow:0 3px 6px rgba(0,0,0,.5)}
 .dclose{position:absolute;right:6px;top:4px;width:36px;height:36px;border:0;background:transparent;color:#0d0d0d;font:400 26px/1 var(--serif);cursor:pointer}
 .dtag{font:500 14px/1.2 var(--mono);letter-spacing:.12em;display:flex;gap:.9em;align-items:baseline;margin:0 40px 10px 0}
 .dtag #dTag{font:800 22px/1 var(--serif);letter-spacing:.04em}
@@ -573,7 +573,7 @@ body.lite .cam video,body.lite .cam canvas,body.lite .cam .camimg{filter:none}
       <div><dt>展示</dt><dd><a href="https://instagram.com/egg___0141" target="_blank" rel="noopener">KITANO YUTO</a></dd></div>
       <div><dt>WEB</dt><dd><a href="https://instagram.com/churroigc" target="_blank" rel="noopener">TANAKA RYUKI</a></dd></div>
       <div><dt>アカウント</dt><dd><a href="https://instagram.com/hakuchumu_phenomenon" target="_blank" rel="noopener">@hakuchumu_phenomenon</a></dd></div>
-      <div><dt>バージョン</dt><dd>v1.1.0</dd></div>
+      <div><dt>バージョン</dt><dd>v1.1.1</dd></div>
       <div><dt>公開日</dt><dd>2026.10.05</dd></div>
       <div><dt>サウンド</dt><dd>
         <button type="button" id="soundToggle" class="sw" role="switch" aria-checked="false">
@@ -581,7 +581,7 @@ body.lite .cam video,body.lite .cam canvas,body.lite .cam .camimg{filter:none}
         </button>
       </dd></div>
     </dl>
-    <p class="info-note">© 2026 K&T. All rights reserved.<br>本作品は桑沢祭グランプリ2026応募作品の一部です。実在の人物・団体・事件とは関係ありません。また、本映像作品は<a href="https://frenz.jp/2026/exhibitors#member_07333d3d" target="_blank" rel="noopener">FRENZ2026</a>への出展も行い、1日目夜の部第3部にて上映されました。</p>
+    <p class="info-note">© 2026 K&T. All rights reserved.<br>本作品は桑沢祭グランプリ2026応募作品の一部です。実在の人物・団体・事件とは関係ありません。また、本映像作品は<a href="https://frenz.jp/2026/exhibitors#member_07333d3d" target="_blank" rel="noopener">FRENZ2026</a>への出展も行い、1日目夜の部第3部にて上映されました。<br>本編映像は<a href="https://www.youtube.com/watch?v=a62MSyfBIsI" target="_blank" rel="noopener">こちら</a>からご覧いただけます。</p>
     <div class="info-actions"><button type="button" class="info-close" data-close>閉じる</button></div>
   </div>
 </dialog>
@@ -1057,7 +1057,7 @@ $('.cam .rec').style.zIndex = 3;
 const bgsvg = $('#bgsvg');
 const blobs = [];
 for(let i=0;i<4;i++){
-  const p = svgEl('path', { fill:'rgba(255,255,255,.028)', stroke:'rgba(255,255,255,.05)', 'stroke-width':2 });
+  const p = svgEl('path', { fill:'rgba(255,255,255,.028)', stroke:'rgba(255,255,255,.05)', 'stroke-width':1 });
   bgsvg.appendChild(p);
   blobs.push({ el:p, cx:rr(.15,.85)*BOARD, cy:rr(.15,.85)*BOARD, r:rr(380,760), s:rr(0,TAU) });
 }
@@ -1096,15 +1096,15 @@ const stringsG = $('#stringsG'), pinsG = $('#pinsG');
 const edgeObjs = [], pinObjs = new Map();
 EDGES.forEach(e => {
   const a = byKey[e[0]], b = byKey[e[1]]; if(!a || !b) return;
-  const glow = svgEl('path', { fill:'none', stroke:'rgba(255,42,42,.16)', 'stroke-width':9, 'stroke-linecap':'round' });
-  const line = svgEl('path', { fill:'none', stroke:'#ff2a2a', 'stroke-width':3, 'stroke-linecap':'round' });
+  const glow = svgEl('path', { fill:'none', stroke:'rgba(255,42,42,.16)', 'stroke-width':4, 'stroke-linecap':'round' });
+  const line = svgEl('path', { fill:'none', stroke:'#ff2a2a', 'stroke-width':1, 'stroke-linecap':'round' });
   stringsG.appendChild(glow); stringsG.appendChild(line);
   edgeObjs.push({ a, b, glow, line, ph:rr(0,TAU), sg:rnd()<.5?-1:1 });
   [a,b].forEach(f => {
     if(pinObjs.has(f)) return;
     const g = svgEl('g', {});
-    g.appendChild(svgEl('circle', { r:11, fill:'#6d0b0b', stroke:'#ff5050', 'stroke-width':2 }));
-    g.appendChild(svgEl('circle', { r:3.6, cx:-3.5, cy:-3.5, fill:'#ffc0c0' }));
+    g.appendChild(svgEl('circle', { r:11, fill:'#808080', stroke:'#dbdbdb', 'stroke-width':2 }));
+    g.appendChild(svgEl('circle', { r:3.6, cx:-3.5, cy:-3.5, fill:'#f7f7f7' }));
     pinsG.appendChild(g); pinObjs.set(f, g);
   });
 });
